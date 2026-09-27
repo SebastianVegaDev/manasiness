@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+.turbo/
+**/.turbo/
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+pnpm-lock.yaml
+
+# M0 documents are historical/domain artifacts.
+# Do not create a massive unrelated formatting diff.
+docs/

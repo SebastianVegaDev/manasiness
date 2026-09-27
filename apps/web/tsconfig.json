@@ -1,0 +1,14 @@
+{
+    "extends": "@manasiness/typescript-config/react.json",
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+    "exclude": [
+        "node_modules",
+        ".next"
+    ]
+}

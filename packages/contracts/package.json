@@ -1,5 +1,14 @@
 {
     "name": "@manasiness/contracts",
     "version": "0.0.0",
-    "private": true
+    "private": true,
+    "scripts": {
+        "lint": "eslint . --no-error-on-unmatched-pattern"
+    },
+    "devDependencies": {
+        "@manasiness/eslint-config": "workspace:*",
+        "@manasiness/typescript-config": "workspace:*",
+        "eslint": "10.11.0",
+        "typescript": "6.0.3"
+    }
 }

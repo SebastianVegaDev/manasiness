@@ -26,6 +26,19 @@ export default [
     ...createReactConfig(browserFiles),
 
     {
+        name: 'manasiness/nestjs-decorated-classes',
+        files: ['apps/api/**/*.ts'],
+        rules: {
+            '@typescript-eslint/no-extraneous-class': [
+                'error',
+                {
+                    allowWithDecorator: true,
+                },
+            ],
+        },
+    },
+
+    {
         name: 'manasiness/package-to-app-boundary',
         files: packageFiles,
         rules: {

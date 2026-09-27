@@ -34,7 +34,7 @@ The generated `pnpm-lock.yaml` is part of the repository contract and must be co
 ```text
 apps/
   api/                # Backend application shell; NestJS arrives in a later M1 issue.
-  web/                # Web application shell; Next.js arrives in a later M1 issue.
+  web/                # Next.js App Router web runtime; see apps/web/README.md.
 
 packages/
   contracts/          # Shared transport-contract boundary.

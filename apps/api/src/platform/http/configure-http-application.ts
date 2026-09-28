@@ -1,9 +1,9 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 
-import type { ApiBootstrapOptions } from '../bootstrap/api-bootstrap-options.js';
+import type { ApiHttpRuntimeConfig } from '../config/api-runtime-config.js';
 
-const ALLOWED_HTTP_METHODS = [
+const allowedHttpMethods = [
     'GET',
     'HEAD',
     'POST',
@@ -14,22 +14,22 @@ const ALLOWED_HTTP_METHODS = [
 
 export function configureHttpApplication(
     app: NestExpressApplication,
-    options: ApiBootstrapOptions,
+    config: ApiHttpRuntimeConfig,
 ): void {
     app.disable('x-powered-by');
 
     app.use(helmet());
 
     app.useBodyParser('json', {
-        limit: options.bodyLimitBytes,
+        limit: config.bodyLimitBytes,
     });
 
     app.useBodyParser('urlencoded', {
-        limit: options.bodyLimitBytes,
+        limit: config.bodyLimitBytes,
     });
 
     app.enableCors({
-        origin: [...options.corsOrigins],
-        methods: [...ALLOWED_HTTP_METHODS],
+        origin: [...config.corsOrigins],
+        methods: [...allowedHttpMethods],
     });
 }

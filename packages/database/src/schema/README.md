@@ -2,11 +2,9 @@
 
 This directory is the entry point for future Drizzle PostgreSQL schema declarations.
 
-Database infrastructure owns physical mapping conventions.
+Database infrastructure owns canonical physical mapping and persistence-safety conventions.
 
-Business domains remain responsible for deciding which business concepts and relationships need persistence.
-
-The conventions in this directory standardize physical representations that should not be reinvented independently by every future domain schema.
+Business domains remain responsible for deciding which business concepts, invariants, relationships, and lifecycle rules require persistence.
 
 ## Canonical identifiers
 
@@ -30,111 +28,230 @@ const id = entityIdColumn('id')
     .notNull();
 ```
 
-Application creation normally generates identifiers before persistence:
+Application creation normally generates identifiers before persistence.
+
+UUID identity is globally unique but carries no tenant-access meaning.
+
+Knowing an entity ID never grants access to that entity.
+
+## Tenant ownership
+
+Organization-owned records contain an explicit:
+
+```text
+organization_id
+```
+
+column.
+
+Declare it through:
 
 ```typescript
 import {
-    generateEntityId,
-} from '@manasiness/platform-primitives';
+    tenantOrganizationIdColumn,
+} from '@manasiness/database/schema';
 
-const id = generateEntityId();
+const organizationId =
+    tenantOrganizationIdColumn();
 ```
 
-This allows identity to exist before an `INSERT` succeeds.
-
-It also keeps normal application identity generation independent from a database sequence or successful persistence operation.
-
-PostgreSQL 18 supports `uuidv7()` for deliberate database-side operations or migrations that need to generate the same canonical UUID version.
-
-Database-side UUID generation should not become an implicit alternative convention for normal application flows.
-
-## Identifier opacity
-
-UUIDv7 includes temporal information structurally.
-
-That information is not business state.
-
-Do not infer:
+Tenant ownership must not be inferred from:
 
 ```text
-createdAt
-business chronology
-tenant ownership
-Organization
-entity type
-authorization
+authenticated session state
+entity ID
+request hostname
+browser state
+server-global variables
 ```
 
-from the identifier.
+The owning Organization is persisted explicitly.
 
-If one of those facts matters, represent it explicitly.
+## Platform-global records
 
-For example:
+Not every table is tenant-owned.
+
+Platform-level concepts such as global Identity may legitimately exist outside an Organization boundary.
+
+A table is unscoped only because its owning domain explicitly defines it as platform-global.
+
+Do not omit `organization_id` merely because adding tenant context is inconvenient.
+
+## Tenant-qualified relationships
+
+References between two Organization-owned tables should normally carry Organization context through the relationship itself.
+
+Parent example:
 
 ```text
-id
-organization_id
-created_at
-occurred_at
+UNIQUE (
+    organization_id,
+    id
+)
 ```
 
-remain separate pieces of data.
+Child example:
 
-Likewise, this is not an acceptable substitute for business chronology:
+```text
+FOREIGN KEY (
+    organization_id,
+    parent_id
+)
+REFERENCES parent (
+    organization_id,
+    id
+)
+```
+
+This ensures a child owned by Organization A cannot reference a parent owned by Organization B even when the parent ID is known.
+
+A globally unique ID does not make this constraint redundant.
+
+Global uniqueness answers:
+
+```text
+Which entity is this?
+```
+
+Tenant qualification answers:
+
+```text
+Does this relationship stay inside the owning Organization?
+```
+
+Those are different invariants.
+
+## Row Level Security
+
+Organization-owned tables use PostgreSQL Row Level Security.
+
+The baseline policy compares the persisted `organization_id` against the transaction-local Manasiness setting:
+
+```text
+manasiness.organization_id
+```
+
+The canonical expression is exported as:
+
+```typescript
+import {
+    currentTenantOrganizationIdSql,
+} from '@manasiness/database/schema';
+```
+
+Conceptual policy:
 
 ```sql
-ORDER BY id
+CREATE POLICY example_tenant_isolation
+    ON example
+    FOR ALL
+    TO PUBLIC
+    USING (
+        organization_id =
+        nullif(
+            current_setting(
+                'manasiness.organization_id',
+                true
+            ),
+            ''
+        )::uuid
+    )
+    WITH CHECK (
+        organization_id =
+        nullif(
+            current_setting(
+                'manasiness.organization_id',
+                true
+            ),
+            ''
+        )::uuid
+    );
 ```
 
-when the actual question is chronological.
+`USING` protects visibility and mutations of existing rows.
 
-Use the timestamp representing the concept being queried:
+`WITH CHECK` protects newly inserted or updated row values.
+
+## Enable and force RLS
+
+Every Organization-owned table must have both:
 
 ```sql
-ORDER BY occurred_at
+ALTER TABLE example
+    ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE example
+    FORCE ROW LEVEL SECURITY;
 ```
 
-or:
+`ENABLE` activates row policies.
+
+`FORCE` also subjects table owners to RLS in ordinary table-owner access.
+
+Runtime connections must additionally use a non-superuser, `NOBYPASSRLS` role.
+
+RLS is not considered correctly installed merely because a policy exists.
+
+## Default deny
+
+If no Organization context is installed, tenant policy evaluation must not grant access.
+
+The canonical setting lookup uses:
 
 ```sql
-ORDER BY created_at
+current_setting(
+    'manasiness.organization_id',
+    true
+)
 ```
 
-as appropriate.
+Missing context therefore produces no matching tenant value.
 
-## Human-readable references
+Organization-owned persistence should fail closed rather than silently becoming global.
 
-Canonical durable identity is separate from human-facing numbering.
+## Runtime role
 
-Values such as:
+Application runtime and migration/schema-owner credentials are different concerns.
+
+The application runtime role must not be:
 
 ```text
-SALE-000142
-PUR-000091
-INV-000731
+SUPERUSER
+BYPASSRLS
+database owner
+table owner
+schema creator
 ```
 
-may eventually exist when an owning domain requires them.
+Production role names are infrastructure configuration and are not hardcoded into product migrations.
 
-They do not replace UUID entity identifiers.
+Policies therefore apply to `PUBLIC`; ordinary PostgreSQL privileges still determine whether the runtime role may access the table at all.
 
-Business numbering has different concerns, including:
+RLS further restricts which rows that already-authorized role may access.
+
+## Migration review
+
+When a migration introduces an Organization-owned table, review all of the following before commit:
 
 ```text
-display
-sequence scope
-Organization scope
-legal requirements
-reset rules
-concurrency
-human communication
+organization_id NOT NULL
+tenant-qualified unique/reference constraints
+RLS policy
+ENABLE ROW LEVEL SECURITY
+FORCE ROW LEVEL SECURITY
+runtime DML privilege provisioning
+tenant-isolation integration coverage
 ```
 
-Those rules belong to the relevant business domain rather than the canonical entity ID primitive.
+Drizzle supports PostgreSQL RLS policy declarations, but generated migration SQL remains subject to normal migration review.
+
+If the current Drizzle schema DSL does not emit `FORCE ROW LEVEL SECURITY`, add the required statement deliberately to the generated migration before commit.
+
+Do not assume generated SQL provides the complete Manasiness tenant-isolation contract.
 
 ## Absolute instant columns
 
-Persist authoritative absolute instants with:
+Persist absolute instants with:
 
 ```typescript
 instantColumn('occurred_at')
@@ -146,57 +263,13 @@ which maps to:
 timestamp(3) with time zone
 ```
 
-and a JavaScript `Date`.
+and JavaScript `Date`.
 
-PostgreSQL's common shorthand for the same type is:
-
-```text
-timestamptz(3)
-```
-
-The precision is deliberately fixed at milliseconds.
-
-JavaScript `Date` represents epoch milliseconds, while PostgreSQL supports finer timestamp precision.
-
-Using `timestamptz(3)` prevents the database from retaining precision that the standard application runtime cannot round-trip exactly.
-
-## Why timezone-aware timestamps
-
-Authoritative instants represent one point on the global timeline.
-
-Examples include:
-
-```text
-record creation
-payment occurrence
-confirmation
-receipt
-cancellation
-inventory movement occurrence
-authentication event
-```
-
-These must not depend on whichever timezone happens to be configured on:
-
-```text
-the PostgreSQL server
-the PostgreSQL session
-the Node.js process
-the operating system
-a developer workstation
-```
-
-For authoritative instants, do not introduce:
-
-```text
-timestamp without time zone
-```
-
-unless a later accepted architecture decision identifies a genuinely different semantic requirement.
+Technical and business timestamps remain separate.
 
 ## Technical timestamps
 
-A future schema may declare technical timestamps as:
+A future schema may declare:
 
 ```typescript
 createdAt: instantColumn('created_at')
@@ -208,71 +281,13 @@ updatedAt: instantColumn('updated_at')
     .defaultNow(),
 ```
 
-`defaultNow()` on `updatedAt` supplies only its initial value.
+`updatedAt` does not update itself merely because it has an initial default.
 
-It does not automatically update the column on later modifications.
-
-Any update behavior must be explicit.
-
-Do not assume Drizzle or PostgreSQL will automatically maintain `updated_at` simply because an initial default exists.
-
-## Technical versus business timestamps
-
-Technical record metadata and domain event time are separate concepts.
-
-For example:
-
-```text
-created_at
-→ when Manasiness persisted the Sale record
-
-occurred_at
-→ when the Sale happened
-
-confirmed_at
-→ when confirmation happened
-
-paid_at
-→ when payment happened
-
-cancelled_at
-→ when cancellation happened
-```
-
-These values may sometimes be equal.
-
-That does not make them semantically interchangeable.
-
-Do not substitute:
-
-```text
-created_at
-updated_at
-```
-
-for an actual domain event merely because those columns already exist.
-
-A later modification must also not rewrite the timestamp of an earlier business event.
-
-## UTC and PostgreSQL
-
-`timestamptz` represents an absolute instant.
-
-PostgreSQL may display that instant according to the current session timezone, but session rendering does not change the stored instant.
-
-Application serialization remains responsible for producing the canonical wire representation:
-
-```text
-YYYY-MM-DDTHH:mm:ss.sssZ
-```
-
-through the platform primitive boundary.
-
-Database session timezone must therefore never become the source of business timezone semantics.
+Update behavior must remain explicit.
 
 ## Date-only columns
 
-Calendar dates without a time-of-day use:
+Calendar dates without time-of-day use:
 
 ```typescript
 localDateColumn('business_date')
@@ -284,34 +299,7 @@ which maps to PostgreSQL:
 date
 ```
 
-and application `LocalDate`:
-
-```text
-YYYY-MM-DD
-```
-
-Examples of concepts that may eventually be date-only include:
-
-```text
-business date
-due date
-document date
-birth date
-scheduled calendar day
-```
-
-depending on the owning domain's semantics.
-
-Do not persist date-only meaning as midnight `timestamptz`.
-
-For example, this transformation is conceptually unsafe:
-
-```text
-2026-09-28
-→ 2026-09-28T00:00:00.000Z
-```
-
-because the original date did not specify either an instant or timezone.
+Do not represent date-only meaning as midnight `timestamptz`.
 
 ## IANA timezone columns
 
@@ -321,199 +309,65 @@ Explicit timezone identifiers use:
 ianaTimeZoneColumn('time_zone')
 ```
 
-which maps to PostgreSQL text and application `IanaTimeZone`.
+Organization timezone is business configuration.
 
-Examples include:
-
-```text
-America/Lima
-America/New_York
-Europe/Madrid
-```
-
-The application validates timezone identifiers before persistence.
-
-A timezone identifier is configuration or domain data.
-
-It is not inferred from:
-
-```text
-PostgreSQL server timezone
-PostgreSQL session timezone
-Node.js process timezone
-operating-system timezone
-developer-machine timezone
-```
-
-Persistence of Organization timezone settings remains the responsibility of the milestone that owns Organization configuration.
-
-## Column helper responsibility
-
-The helpers in this directory standardize physical representation.
-
-They do not decide whether a domain needs a particular field.
-
-For example:
-
-```text
-instantColumn()
-```
-
-defines how an absolute instant should map to PostgreSQL.
-
-It does not mean every entity needs:
-
-```text
-occurred_at
-confirmed_at
-paid_at
-cancelled_at
-```
-
-Those decisions belong to domain modeling.
-
-Likewise:
-
-```text
-entityIdColumn()
-```
-
-standardizes durable identifier storage.
-
-It does not create domain-specific identities such as:
-
-```text
-OrganizationId
-CustomerId
-SaleId
-PurchaseId
-```
-
-Those remain future domain concerns.
+It must not be inferred from the database server or process timezone.
 
 ## Naming
 
-Column names follow snake_case in PostgreSQL:
+PostgreSQL uses snake_case:
 
 ```text
+organization_id
 created_at
 updated_at
 occurred_at
 business_date
 time_zone
-organization_id
 ```
 
-TypeScript properties use normal camelCase:
+TypeScript properties use camelCase.
+
+## Testing requirement
+
+Future Organization-owned tables should include integration coverage that demonstrates at minimum:
 
 ```text
-createdAt
-updatedAt
-occurredAt
-businessDate
-timeZone
-organizationId
+tenant A can read tenant A
+tenant A cannot read tenant B
+tenant A cannot write tenant B
+cross-tenant references fail
+missing tenant context fails closed
+RLS is enabled
+RLS is forced
 ```
 
-Do not leak PostgreSQL naming conventions into TypeScript merely to avoid mapping.
-
-## Nullability
-
-Column helpers do not universally decide nullability.
-
-Whether a value is:
+`@manasiness/database/testing` provides:
 
 ```text
-required
-optional
-conditionally present
-immutable after creation
+assertTenantTableRlsProtected()
 ```
 
-is a domain decision.
+for the structural RLS assertions.
 
-Apply `.notNull()` only when the owning schema's semantics require it.
-
-For example:
-
-```typescript
-id: entityIdColumn('id')
-    .primaryKey()
-    .notNull(),
-```
-
-may be appropriate for durable entity identity.
-
-A domain event such as:
-
-```text
-paid_at
-```
-
-could legitimately remain nullable until payment occurs.
-
-The primitive mapping should not encode that business lifecycle.
-
-## Defaults
-
-Defaults are also semantic decisions.
-
-The presence of:
-
-```text
-instantColumn()
-entityIdColumn()
-localDateColumn()
-```
-
-does not mean every field should have a database default.
-
-Prefer explicit application-generated entity IDs for normal application creation.
-
-Use database defaults only when their behavior is deliberate and consistent with the owning use case.
-
-Similarly, `defaultNow()` is appropriate only when database insertion time truly represents the intended value.
-
-Never use `defaultNow()` as a shortcut for a business event whose actual occurrence time should be provided explicitly.
+The owning domain remains responsible for proving its actual read/write behavior.
 
 ## Migration expectations
 
-Changing an identifier or timestamp representation after domain tables exist is a schema migration.
+Identifier, timestamp, tenancy, and relationship conventions should be present from the first migration that introduces a domain table.
 
-Do not rewrite already-applied migrations if these conventions ever evolve.
+Do not plan to retrofit tenant isolation after production data exists.
 
-Any future change requires:
+If these conventions ever change:
 
 ```text
 new migration
 +
-data migration/backfill where necessary
+explicit data transformation
 +
-contract compatibility analysis
+security review
 +
-explicit architecture review
+compatibility analysis
 ```
 
-Issue #29 introduces these conventions before product-domain tables depend on them.
-
-Therefore this issue does not require a new migration.
-
-The existing migration baseline remains unchanged.
-
-## Schema ownership
-
-A shared PostgreSQL database does not imply shared domain ownership.
-
-Future schema files should remain aligned with the owning business modules.
-
-Cross-domain technical primitives may be centralized here only when an accepted architecture decision establishes one system-wide representation.
-
-Keep the distinction clear:
-
-```text
-domain decides meaning
-database package decides physical mapping
-platform-primitives defines canonical technical runtime representation
-```
-
-That boundary should remain stable as the product grows.
+Historical applied migrations are not rewritten.

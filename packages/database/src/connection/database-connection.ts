@@ -2,6 +2,10 @@ import { Pool } from 'pg';
 
 import type { DatabaseRuntimeConfig } from '../config/database-runtime-config.js';
 import {
+    createTenantDatabaseScope,
+    type TenantDatabaseScope,
+} from '../tenant/tenant-database-scope.js';
+import {
     createDatabaseTransactionRunner,
     type DatabaseTransactionRunner,
 } from '../transaction/database-transaction-runner.js';
@@ -38,11 +42,15 @@ export function createDatabaseConnection(
     const transactions: DatabaseTransactionRunner =
         createDatabaseTransactionRunner(pool);
 
+    const tenantScope: TenantDatabaseScope =
+        createTenantDatabaseScope(transactions);
+
     let closed = false;
 
     return Object.freeze({
         db,
         transactions,
+        tenantScope,
 
         async verify(): Promise<void> {
             if (closed) {

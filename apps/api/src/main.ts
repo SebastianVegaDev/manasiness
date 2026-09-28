@@ -1,3 +1,4 @@
+import { loadDatabaseRuntimeConfig } from '@manasiness/database';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -14,10 +15,18 @@ async function bootstrap(): Promise<void> {
     loadApiEnvironmentFileIfPresent();
 
     const config = loadApiRuntimeConfig();
+    const databaseConfig =
+        loadDatabaseRuntimeConfig(process.env);
 
     const app =
         await NestFactory.create<NestExpressApplication>(
-            AppModule,
+            AppModule.register({
+                database: {
+                    config: databaseConfig,
+                    applicationName:
+                        config.service.name,
+                },
+            }),
             {
                 abortOnError: false,
                 logger: resolveNestLogLevels(

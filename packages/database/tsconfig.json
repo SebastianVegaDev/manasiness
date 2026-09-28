@@ -4,7 +4,9 @@
         "noEmit": true
     },
     "include": [
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "scripts/**/*.ts",
+        "drizzle.config.ts"
     ],
     "exclude": [
         "node_modules",

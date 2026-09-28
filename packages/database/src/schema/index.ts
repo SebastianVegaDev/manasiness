@@ -1,11 +1,17 @@
-/**
- * Drizzle schema entry point.
- *
- * Product-domain tables are intentionally absent from M1 Issue #28.
- *
- * Future schemas must be introduced by the issue that owns their
- * domain and persistence semantics rather than being pre-created here
- * to exercise the database tooling.
- */
+export {
+    entityIdColumn,
+    ianaTimeZoneColumn,
+    instantColumn,
+    localDateColumn,
+} from './primitives.js';
 
-export {};
+/**
+ * Drizzle product-domain schema entry point.
+ *
+ * Product-domain tables remain intentionally absent until their
+ * owning milestone defines their persistence semantics.
+ *
+ * Cross-domain technical column conventions may live here when an
+ * accepted architecture decision requires one canonical database
+ * representation.
+ */

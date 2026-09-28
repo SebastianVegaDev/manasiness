@@ -1,5 +1,8 @@
 import { Client } from 'pg';
 
+const runtimeRole = 'manasiness_app';
+const migrationRole = 'manasiness';
+
 export async function resetDatabaseSchemas(
     connectionUrl: string,
 ): Promise<void> {
@@ -21,8 +24,25 @@ export async function resetDatabaseSchemas(
         );
 
         await client.query(
-            'CREATE SCHEMA public',
+            `CREATE SCHEMA public AUTHORIZATION ${migrationRole}`,
         );
+
+        await client.query(
+            'REVOKE CREATE ON SCHEMA public FROM PUBLIC',
+        );
+
+        await client.query(
+            `GRANT USAGE ON SCHEMA public TO ${runtimeRole}`,
+        );
+
+        await client.query(`
+            ALTER DEFAULT PRIVILEGES
+                FOR ROLE ${migrationRole}
+                IN SCHEMA public
+                GRANT SELECT, INSERT, UPDATE, DELETE
+                ON TABLES
+                TO ${runtimeRole}
+        `);
 
         await client.query('COMMIT');
     } catch (error: unknown) {

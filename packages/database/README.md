@@ -15,42 +15,41 @@ Drizzle Kit 0.31.11
 node-postgres 8.23.0
 ```
 
-The repository deliberately uses the stable Drizzle releases rather than the current 1.0 release candidates.
-
 ## Ownership
 
 This package may own:
 
 - PostgreSQL connection infrastructure;
 - Drizzle client creation;
-- runtime database configuration;
+- database runtime configuration;
 - transaction primitives;
+- tenant persistence infrastructure;
 - migration infrastructure;
 - migration tooling;
-- database test infrastructure;
-- low-level database testing helpers.
+- database integration-test helpers.
 
-It must not become the owner of:
+It does not own:
 
 - Sales rules;
 - Inventory rules;
 - Finance rules;
 - Organization authorization;
+- Membership authorization;
 - business use cases;
 - cross-domain orchestration;
-- a universal repository covering every domain.
+- a universal repository registry.
 
 A shared physical database does not imply shared business ownership.
 
 ## Local PostgreSQL
 
-Start PostgreSQL from repository root:
+Start PostgreSQL with:
 
 ```bash
 pnpm db:up
 ```
 
-The local Docker environment contains:
+The local databases are:
 
 ```text
 manasiness_dev
@@ -58,19 +57,54 @@ manasiness_test
 manasiness_migration_validation
 ```
 
-The PostgreSQL port is exposed only through the local loopback interface.
+The port is exposed only on:
 
-Stop it with:
+```text
+127.0.0.1:5432
+```
+
+Stop PostgreSQL:
 
 ```bash
 pnpm db:stop
 ```
 
-View logs with:
+View logs:
 
 ```bash
 pnpm db:logs
 ```
+
+## Local database roles
+
+The development environment separates schema ownership from application runtime.
+
+```text
+manasiness
+→ local migration/admin role
+
+manasiness_app
+→ local application runtime role
+```
+
+The API must use:
+
+```text
+manasiness_app
+```
+
+not the administrative role.
+
+The runtime role is deliberately:
+
+```text
+NOSUPERUSER
+NOBYPASSRLS
+not database owner
+without CREATE on public
+```
+
+This separation is required for Row Level Security to provide meaningful defense in depth.
 
 ## Tooling environment
 
@@ -80,176 +114,218 @@ Create:
 Copy-Item packages/database/.env.example packages/database/.env
 ```
 
-The file is intentionally separate from `apps/api/.env`.
+Database tooling uses administrative local credentials because migrations and test fixture setup require schema-level privileges.
 
-`apps/api/.env` configures the API process.
-
-`packages/database/.env` configures database tooling and integration tests.
-
-They may contain the same local development URL while remaining different runtime boundaries.
+The API has its own independent `.env` and uses the runtime role.
 
 ## Runtime connection
 
 `createDatabaseConnection()` owns one node-postgres pool.
 
-The returned connection exposes:
+The connection exposes:
 
 ```text
 db
 transactions
+tenantScope
 verify()
 close()
 ```
 
-The underlying `Pool` is deliberately not exposed through the package API.
+The underlying `Pool` is private.
 
-NestJS integration belongs to `apps/api`.
+## Unscoped access
 
-The database package contains no NestJS dependency.
+`db` and `transactions` are physically unscoped capabilities.
+
+They are required for:
+
+- platform-global persistence;
+- technical database operations;
+- explicitly global Identity persistence;
+- infrastructure/testing.
+
+Application DI names them explicitly as:
+
+```text
+UNSCOPED_DATABASE_EXECUTOR
+UNSCOPED_DATABASE_TRANSACTION_RUNNER
+```
+
+Organization-owned domain code should not use them as its normal persistence entry point.
+
+Unscoped access is exceptional by design.
+
+## Tenant database scope
+
+Organization-owned persistence uses:
+
+```text
+TenantDatabaseScope
+```
+
+Usage:
+
+```typescript
+await tenantDatabaseScope.run(
+    {
+        organizationId,
+    },
+    async ({ executor }) => {
+        // Organization-scoped persistence operations.
+    },
+);
+```
+
+The scope:
+
+```text
+starts one transaction
+sets manasiness.organization_id transaction-locally
+provides one DatabaseExecutor
+commits or rolls back
+releases the connection
+```
+
+The tenant context disappears when the transaction completes.
+
+It must not be stored globally.
+
+## Why tenant scope uses a transaction
+
+PostgreSQL tenant context is installed with:
+
+```text
+set_config(..., true)
+```
+
+The `true` value makes the setting local to the current transaction.
+
+This deliberately avoids session-level tenant state surviving in a pooled connection.
+
+Even read-only tenant persistence therefore enters a controlled database scope.
+
+This is a security trade-off chosen for predictability and fail-closed behavior.
+
+It can be optimized later only if the alternative preserves the same isolation guarantees.
+
+## Row Level Security
+
+Organization-owned tables use PostgreSQL RLS as a defense-in-depth layer.
+
+RLS does not replace:
+
+```text
+application authorization
+explicit Organization context
+tenant-qualified relationships
+domain ownership
+```
+
+It protects against classes of persistence mistakes that pass an incorrect or missing tenant filter.
+
+The canonical PostgreSQL setting is:
+
+```text
+manasiness.organization_id
+```
+
+If no tenant scope exists, Organization-owned policies must not expose rows.
+
+## Runtime role verification
+
+The API verifies its database role during application bootstrap.
+
+Startup fails when the current role is:
+
+```text
+SUPERUSER
+BYPASSRLS
+database owner
+able to CREATE in public
+```
+
+This makes accidental deployment with a migration/admin credential visible immediately.
+
+The migration tooling connection is intentionally privileged and is not subject to this API-runtime assertion.
+
+## Platform-global data
+
+Some data may legitimately exist outside Organization scope.
+
+The primary planned example is platform Identity.
+
+A platform-global table must be explicitly justified by its owning domain.
+
+Global identity does not weaken tenant isolation for Organization-owned operational data.
+
+## Tenant-qualified relationships
+
+Organization-owned relationships should normally enforce tenant equality structurally.
+
+Parent:
+
+```text
+UNIQUE (
+    organization_id,
+    id
+)
+```
+
+Child:
+
+```text
+FOREIGN KEY (
+    organization_id,
+    parent_id
+)
+REFERENCES parent (
+    organization_id,
+    id
+)
+```
+
+This prevents cross-Organization references even if application code accidentally supplies a globally valid foreign ID.
 
 ## Database executor
 
-Persistence adapters should depend on:
+Persistence adapters depend on:
 
 ```text
 DatabaseExecutor
 ```
 
-rather than the node-postgres pool or transaction internals.
+rather than connection-pool internals.
 
-The executor provides the Drizzle query-building operations required by persistence code.
-
-A normal database client satisfies `DatabaseExecutor`.
-
-A transaction-bound Drizzle client also satisfies `DatabaseExecutor`.
-
-This allows the same persistence operation to run:
+The same adapter can receive:
 
 ```text
-normally
+ordinary executor
 ```
 
 or:
 
 ```text
-inside an application-owned transaction
+transaction/tenant-bound executor
 ```
 
-without duplicating query logic.
+without duplicating its query logic.
 
 ## Transaction ownership
 
 Transactions follow business commands.
 
-The application layer owns the top-level transaction boundary.
+Top-level business atomicity belongs to the application layer.
 
-Conceptually:
+Repositories do not silently start their own top-level transactions.
 
-```text
-application use case
-    ↓
-DatabaseTransactionRunner.run(...)
-    ↓
-one PostgreSQL transaction
-    ├── persistence operation A
-    ├── persistence operation B
-    └── persistence operation C
-```
+Controllers do not own business transactions.
 
-A repository or persistence adapter must not start an independent top-level transaction when the application use case owns atomicity.
-
-Controllers must not manage transactions for business behavior.
-
-HTTP request lifetime is not automatically equivalent to transaction lifetime.
-
-## Transaction lifecycle
-
-`DatabaseTransactionRunner` explicitly controls:
-
-```text
-pool.connect()
-    ↓
-BEGIN
-    ↓
-application callback
-    ↓
-COMMIT
-```
-
-If the callback fails:
-
-```text
-application error
-    ↓
-ROLLBACK
-    ↓
-rethrow original error
-```
-
-The checked-out client is released in all normal success/failure paths.
-
-A connection that encounters an uncertain transaction-control failure may be destroyed instead of returned to the pool.
-
-This prevents a potentially unhealthy connection from being reused.
-
-## Isolation level
-
-The current application transaction baseline is explicitly:
-
-```text
-READ COMMITTED
-READ WRITE
-```
-
-This matches the intended PostgreSQL V1 baseline.
-
-A different isolation level must be introduced because a concrete concurrency invariant requires it.
-
-Do not choose stronger isolation merely as a generic safety preference.
-
-## Error propagation
-
-When application work fails and rollback succeeds, the original application/database error is rethrown unchanged.
-
-If rollback itself also fails, the transaction runner raises an `AggregateError` containing both failures.
-
-A rollback failure is treated as an infrastructure failure and the checked-out client is destroyed rather than returned to the pool.
-
-## Nested transactions
-
-Nested application transaction boundaries are currently prohibited.
-
-This is rejected:
-
-```typescript
-await transactions.run(async () => {
-    await transactions.run(async () => {
-        // ...
-    });
-});
-```
-
-The inner operation must reuse the transaction executor already supplied by the outer application transaction.
-
-The underlying ORM/database may support savepoints, but Manasiness does not expose savepoint semantics as an application contract without a concrete business requirement.
-
-## Transaction context lifetime
-
-A transaction executor is valid only for the transaction callback that received it.
-
-Do not:
-
-- store the executor globally;
-- cache it in a singleton;
-- return it to callers;
-- use it from detached asynchronous work;
-- continue using it after the callback completes.
-
-Every operation that belongs to the transaction must be awaited before the callback returns.
+Nested application transaction boundaries remain prohibited.
 
 ## Cross-domain atomicity
 
-One transaction may coordinate consequences owned by several domains.
+Several domain-owned persistence adapters may participate in one transaction.
 
 For example:
 
@@ -261,173 +337,108 @@ Inventory
 Finance
 ```
 
-may eventually participate in one atomic business command.
+may eventually commit atomically.
 
-This does not permit:
+This never permits one module to directly mutate another module's tables.
 
-```text
-Sales persistence
-→ direct writes to Inventory tables
-```
-
-or:
-
-```text
-Finance persistence
-→ direct writes to Sales tables
-```
-
-Each domain continues to own its behavior and persistence semantics.
-
-The application layer coordinates their capabilities and supplies one shared transaction executor.
+Atomicity and ownership are separate concerns.
 
 ## External side effects
 
-Avoid holding a database transaction open while waiting on unreliable external I/O.
-
-Examples include:
+Do not hold PostgreSQL transactions open unnecessarily while waiting on:
 
 ```text
 email
 webhooks
 payment providers
-third-party HTTP APIs
-remote file storage
+third-party APIs
+remote storage
 ```
 
-If external side effects later need reliable coordination with committed database state, introduce a deliberate reliability mechanism.
+Reliable coordination with external side effects requires a deliberate later pattern.
 
-Issue #30 does not introduce:
-
-```text
-distributed transactions
-sagas
-outbox
-message broker
-```
+Issue #31 does not introduce distributed transactions, sagas, or an outbox.
 
 ## Schema ownership
 
-Drizzle schema declarations enter through:
+Drizzle product schema enters through:
 
 ```text
 src/schema/index.ts
 ```
 
-A future schema appears only when its owning domain issue defines its persistence semantics.
-
-Do not add placeholder product-domain tables simply to test infrastructure.
-
-Canonical low-level schema mappings are exposed through:
+Canonical mappings are exported from:
 
 ```text
 @manasiness/database/schema
 ```
 
-and currently include:
+including:
 
 ```text
 entityIdColumn()
 instantColumn()
 localDateColumn()
 ianaTimeZoneColumn()
+tenantOrganizationIdColumn()
+currentTenantOrganizationIdSql
 ```
+
+No real Organization/domain table is introduced by Issue #31.
 
 ## Migration workflow
 
-The source-of-truth workflow is:
+Schema evolution follows:
 
 ```text
-Drizzle TypeScript schema
-        ↓
-drizzle-kit generate
-        ↓
-review generated SQL
-        ↓
-commit migration + metadata
-        ↓
-apply migration
+Drizzle schema
+→ drizzle-kit generate
+→ review generated SQL
+→ commit migration + metadata
+→ migrate
 ```
 
 Generate:
 
 ```bash
-pnpm db:generate -- --name=meaningful-migration-name
+pnpm db:generate -- --name=meaningful-name
 ```
 
-Check migration-history consistency:
+Check:
 
 ```bash
 pnpm db:check
 ```
 
-Apply pending migrations:
+Migrate:
 
 ```bash
 pnpm db:migrate
 ```
 
-Validate the complete history against a clean database:
+Validate full history:
 
 ```bash
 pnpm db:validate
 ```
 
-## Migration review
+`drizzle-kit push` remains intentionally absent.
 
-Generated migration SQL must be reviewed before commit.
+## Tenant migration checklist
 
-Review at minimum:
-
-- destructive DDL;
-- unexpected table/column drops;
-- incorrect renames;
-- nullable-to-required transitions;
-- unexpected defaults;
-- indexes;
-- foreign keys;
-- constraint behavior;
-- data-loss risk;
-- lock/large-table implications once production data exists.
-
-Generated output is not automatically correct merely because Drizzle generated it.
-
-## Historical migration policy
-
-Once a migration is part of released/applied history, treat it as historical.
-
-Do not rewrite it merely to make the migration folder look cleaner.
-
-Use a later migration to evolve the database.
-
-This includes changes such as:
+When a future migration introduces an Organization-owned table, review:
 
 ```text
-column changes
-constraint corrections
-index changes
-data backfills
-schema corrections
+organization_id NOT NULL
+tenant-qualified relationships
+RLS policy
+ENABLE ROW LEVEL SECURITY
+FORCE ROW LEVEL SECURITY
+runtime privileges
+cross-tenant integration tests
 ```
 
-Migration history should explain how the deployed database actually evolved.
-
-## Schema push
-
-`drizzle-kit push` is deliberately not exposed as a repository script.
-
-Production schema evolution uses versioned migrations.
-
-Do not replace:
-
-```text
-generate
-review
-commit
-migrate
-```
-
-with direct production schema synchronization.
+Do not consider tenant protection complete when only application query filters exist.
 
 ## Development reset
 
@@ -435,101 +446,90 @@ with direct production schema synchronization.
 pnpm db:reset:dev
 ```
 
-is destructive.
+is destructive and restricted to the local development database.
 
-It is deliberately constrained to:
-
-```text
-loopback host
-+
-database name = manasiness_dev
-```
-
-The command removes application/migration schemas and reapplies the complete migration history.
-
-It must never be used against production.
+Reset recreates the `public` schema, restores runtime schema usage, and restores default application DML grants before migrations are reapplied.
 
 ## Test database
 
-Tests use the dedicated:
+Administrative integration setup uses:
 
 ```text
 DATABASE_TEST_URL
 ```
 
-boundary rather than ordinary runtime `DATABASE_URL`.
+Runtime RLS tests use:
 
-The exported testing configuration rejects database names that do not identify a dedicated Manasiness test database.
-
-Reset it with:
-
-```bash
-pnpm db:reset:test
+```text
+DATABASE_TEST_RUNTIME_URL
 ```
 
-## Integration-test helper
+This distinction ensures RLS tests execute under the same class of non-privileged role used by the application.
 
-`@manasiness/database/testing` exposes:
+## Testing helpers
+
+`@manasiness/database/testing` provides:
 
 ```text
 withDatabaseTestConnection()
+withDatabaseTestRuntimeConnection()
+assertTenantTableRlsProtected()
 ```
 
-for PostgreSQL integration tests.
+The first uses the administrative test role.
 
-The helper:
+The second uses the application test role.
+
+The third verifies that a tenant table:
 
 ```text
-validates the test database target
-creates a connection
-verifies connectivity
-executes the test callback
-closes the pool in finally
+has RLS enabled
+has FORCE RLS enabled
+has at least one policy
 ```
 
-This prevents later integration suites from repeatedly implementing connection lifecycle themselves.
+Owning domain tests still need to prove actual cross-tenant read/write behavior.
 
-## Transaction integration tests
+## Tenant isolation integration tests
 
-The database package includes real PostgreSQL integration coverage for:
-
-- normal executor usage;
-- transaction commit;
-- transaction rollback;
-- atomic rollback of several operations;
-- pool reuse after failure;
-- nested transaction rejection;
-- transaction isolation baseline.
-
-The test suite deliberately uses a pool size of one.
-
-If a failed transaction leaks its checked-out client, the subsequent transaction cannot acquire another one and the suite fails.
-
-Run with:
-
-```bash
-pnpm db:up
-pnpm --filter @manasiness/database test
-```
-
-## Migration validation
-
-`pnpm db:validate` performs two separate checks:
+Issue #31 includes test-only tenant tables that verify:
 
 ```text
-drizzle-kit check
-+
-clean-database migration application
+missing tenant context sees no rows
+tenant A sees tenant A
+tenant A cannot see tenant B
+tenant A cannot write tenant B
+cross-tenant foreign references fail
+same-tenant references succeed
+tenant context does not leak through pool reuse
+runtime role cannot bypass RLS
+RLS is enabled and forced
 ```
 
-The validation database is deliberately independent from development and test data.
+The probe tables exist only during tests.
 
-This command is intended to become a CI quality gate.
+They are not part of migration history.
+
+## Production roles
+
+Production role provisioning belongs to deployment infrastructure.
+
+Product migrations must not hardcode environment-specific runtime-role names.
+
+The expected separation remains:
+
+```text
+migration/schema-owner role
+≠
+application runtime role
+```
+
+The runtime role must not have `SUPERUSER` or `BYPASSRLS`.
 
 ## Production migrations
 
-The API does not automatically execute migrations on application startup.
+The API does not run migrations automatically during startup.
 
-Deployment must deliberately apply migrations as a separate operational step.
+Deployment applies migrations as a deliberate operational step before or alongside application rollout.
 
-This prevents multiple application replicas from unexpectedly competing to alter schema and keeps schema deployment observable and controllable.
+Schema ownership and application runtime privileges remain separate.

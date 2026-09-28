@@ -2,7 +2,9 @@
 
 `@manasiness/api` is the backend runtime for the Manasiness modular monolith.
 
-It provides the executable NestJS process and platform-level HTTP foundation. Product-domain capabilities are added only by the milestones that own them.
+It provides the executable NestJS process and platform-level HTTP/database foundation.
+
+Product-domain capabilities are added only by the milestones that own them.
 
 ## Runtime
 
@@ -12,112 +14,173 @@ The API uses:
 - NestJS 12;
 - TypeScript with the repository NodeNext configuration;
 - Express through the NestJS platform adapter;
+- PostgreSQL through `@manasiness/database`;
 - Zod for runtime configuration validation.
 
 The application is an ES module.
 
 ## Local development
 
-Create the local environment file:
+Create:
 
 ```powershell
 Copy-Item apps/api/.env.example apps/api/.env
 ```
 
-Then run:
+Then start local PostgreSQL:
+
+```powershell
+pnpm db:up
+```
+
+Start the API:
 
 ```powershell
 pnpm --filter @manasiness/api dev
 ```
 
-The example configuration starts the API at:
+The default address is:
 
 ```text
 http://127.0.0.1:3001
 ```
 
-## Runtime configuration
+## API runtime configuration
 
-Environment access is centralized under:
+Feature/domain code must not read `process.env` directly.
+
+API-specific configuration is owned under:
 
 ```text
 src/platform/config/
 ```
 
-Feature and domain code must not read `process.env` directly.
+Current API configuration includes:
 
-The current configuration contract is:
+| Variable | Required | Default |
+| --- | --- | --- |
+| `APP_ENV` | yes | none |
+| `API_SERVICE_NAME` | no | `manasiness-api` |
+| `API_LOG_LEVEL` | no | `info` |
+| `API_HOST` | no | `127.0.0.1` |
+| `API_PORT` | no | `3001` |
+| `API_BODY_LIMIT_BYTES` | no | `1048576` |
+| `API_CORS_ORIGINS` | no | none |
 
-| Variable               | Required | Default          | Purpose                                 |
-| ---------------------- | -------- | ---------------- | --------------------------------------- |
-| `APP_ENV`              | yes      | none             | Runtime/deployment classification       |
-| `API_SERVICE_NAME`     | no       | `manasiness-api` | Stable process/service identity         |
-| `API_LOG_LEVEL`        | no       | `info`           | Nest bootstrap log level                |
-| `API_HOST`             | no       | `127.0.0.1`      | HTTP bind host                          |
-| `API_PORT`             | no       | `3001`           | HTTP port                               |
-| `API_BODY_LIMIT_BYTES` | no       | `1048576`        | JSON/urlencoded body limit              |
-| `API_CORS_ORIGINS`     | no       | none             | Comma-separated allowed browser origins |
+Database configuration is validated by `@manasiness/database`.
 
-`APP_ENV` accepts:
+## Database runtime role
 
-```text
-development
-test
-production
-```
+The API must connect with a dedicated non-privileged runtime database role.
 
-`API_LOG_LEVEL` accepts:
+Local development uses:
 
 ```text
-debug
-info
-warn
-error
+manasiness_app
 ```
 
-Configuration is validated before the API begins listening.
+Do not configure the API with:
 
-Invalid configuration fails startup with field-oriented errors.
+```text
+manasiness
+```
 
-Configuration validation must never serialize the complete environment or raw secret values.
+which is the local migration/admin role.
 
-## `.env` loading
+At startup the API verifies that the active role is not:
 
-The API uses Node.js's native `.env` support.
+```text
+SUPERUSER
+BYPASSRLS
+database owner
+CREATE-capable in public
+```
 
-`apps/api/.env` supplies values that were not already supplied by the process environment.
+An unsafe role causes startup to fail.
 
-Deployment-provided environment variables therefore remain authoritative over local `.env` values.
+This prevents accidental RLS bypass through privileged runtime credentials.
 
-`.env` is a developer convenience, not a production secret-management strategy.
+## Tenant persistence
+
+Organization-owned persistence uses:
+
+```text
+TENANT_DATABASE_SCOPE
+```
+
+The scope requires an explicit Organization identifier and installs it transaction-locally in PostgreSQL.
+
+Conceptually:
+
+```text
+application use case
+    ↓
+organizationId
+    ↓
+TENANT_DATABASE_SCOPE
+    ↓
+tenant-bound DatabaseExecutor
+    ↓
+module persistence adapter
+```
+
+The Organization identifier must come from trusted application/authorization context.
+
+Browser input alone never establishes tenant authority.
+
+## Unscoped persistence
+
+The database module also exposes:
+
+```text
+UNSCOPED_DATABASE_EXECUTOR
+UNSCOPED_DATABASE_TRANSACTION_RUNNER
+```
+
+Their names are intentionally explicit.
+
+They are reserved for genuinely platform-global or technical persistence.
+
+A future platform Identity capability may legitimately use unscoped persistence.
+
+Organization-owned domains should not.
+
+## Authentication versus tenancy
+
+Issue #31 establishes persistence isolation only.
+
+It does not decide:
+
+```text
+who the current Identity is
+which Organizations that Identity belongs to
+which Membership permissions they possess
+whether they may execute a specific capability
+```
+
+Those concerns belong to M3 and later authorization work.
+
+Tenant persistence assumes application code has already obtained an authoritative Organization context.
 
 ## CORS
 
-CORS is closed by default when `API_CORS_ORIGINS` is empty.
+CORS remains closed by default.
 
-For local web development:
+Local browser development normally uses:
 
 ```text
 API_CORS_ORIGINS=http://localhost:3000
 ```
 
-Multiple origins are comma-separated:
-
-```text
-API_CORS_ORIGINS=https://app.example.com,https://admin.example.com
-```
-
-CORS is not an authorization mechanism.
+CORS is not authorization and is unrelated to tenant isolation.
 
 ## Liveness
-
-The process liveness endpoint is:
 
 ```text
 GET /health/live
 ```
 
-Expected response:
+returns:
 
 ```json
 {
@@ -125,9 +188,9 @@ Expected response:
 }
 ```
 
-Liveness deliberately does not depend on PostgreSQL or product-domain state.
+Liveness does not perform dependency-readiness checks.
 
-Dependency readiness belongs to the later observability foundation.
+Readiness belongs to the later observability foundation.
 
 ## Source layout
 
@@ -137,41 +200,38 @@ src/
     app.module.ts
 
     modules/
-        # Future business/domain modules
+        # Product/domain modules
 
     platform/
         config/
+        database/
         health/
         http/
 ```
 
 `AppModule` is the composition root.
 
-`modules/` owns future business capabilities.
+`modules/` owns business capabilities.
 
-`platform/` owns technical runtime infrastructure and must not become a generic business-code dumping ground.
+`platform/` owns runtime infrastructure.
 
-## Testing configuration
+## Transaction ownership
 
-Configuration loaders accept an explicit environment object.
+Business transaction boundaries belong to application use cases.
 
-Tests should use:
+Controllers do not manage transactions.
 
-```text
-test/support/api-environment.ts
-```
+Repositories do not silently start independent top-level transactions.
 
-instead of mutating global `process.env`.
+Organization-scoped transactions should use the tenant database scope so RLS receives the same explicit Organization context.
 
-This keeps configuration tests deterministic and isolated.
+## Database ownership
 
-## Database configuration
+A shared PostgreSQL database does not make domain persistence shared.
 
-No `DATABASE_URL` exists in this configuration contract yet.
+One module must not directly mutate another module's tables.
 
-Issue #28 owns the PostgreSQL/Drizzle integration. Database configuration becomes required when a runtime actually consumes it.
-
-Environment variables must not be added preemptively simply because a later capability may need them.
+Cross-domain behavior is coordinated through explicit application capabilities.
 
 ## Commands
 
@@ -209,8 +269,10 @@ pnpm --filter @manasiness/api start
 
 - runtime configuration is platform infrastructure;
 - domain code does not read environment variables directly;
-- environment variables do not represent Organization business settings;
+- Organization-owned persistence requires explicit tenant context;
+- global Identity does not imply global access to tenant data;
 - controllers do not own business invariants;
-- one module does not directly mutate another module's persistence;
-- cross-domain orchestration belongs in explicit application capabilities;
-- shared packages do not depend on this application.
+- controllers do not own database transaction boundaries;
+- one module does not mutate another module's persistence directly;
+- tenant filtering is defense in depth rather than one repository convention;
+- shared packages do not depend on application internals.

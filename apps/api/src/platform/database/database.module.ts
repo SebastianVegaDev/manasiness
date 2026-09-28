@@ -9,19 +9,26 @@ import {
 } from '@nestjs/common';
 
 import {
+    assertRlsSafeRuntimeDatabaseRole,
     createDatabaseConnection,
     type DatabaseConnection,
     type DatabaseExecutor,
     type DatabaseRuntimeConfig,
     type DatabaseTransactionRunner,
+    type TenantDatabaseScope,
 } from '@manasiness/database';
 
-export const DATABASE_EXECUTOR = Symbol(
-    'MANASINESS_DATABASE_EXECUTOR',
+export const UNSCOPED_DATABASE_EXECUTOR = Symbol(
+    'MANASINESS_UNSCOPED_DATABASE_EXECUTOR',
 );
 
-export const DATABASE_TRANSACTION_RUNNER = Symbol(
-    'MANASINESS_DATABASE_TRANSACTION_RUNNER',
+export const UNSCOPED_DATABASE_TRANSACTION_RUNNER =
+    Symbol(
+        'MANASINESS_UNSCOPED_DATABASE_TRANSACTION_RUNNER',
+    );
+
+export const TENANT_DATABASE_SCOPE = Symbol(
+    'MANASINESS_TENANT_DATABASE_SCOPE',
 );
 
 const DATABASE_CONNECTION = Symbol(
@@ -46,6 +53,10 @@ class DatabaseLifecycleService
 
     async onApplicationBootstrap(): Promise<void> {
         await this.connection.verify();
+
+        await assertRlsSafeRuntimeDatabaseRole(
+            this.connection.db,
+        );
     }
 
     async onApplicationShutdown(): Promise<void> {
@@ -70,35 +81,48 @@ export class DatabaseModule {
                 ),
         };
 
-        const executorProvider: Provider = {
-            provide: DATABASE_EXECUTOR,
+        const unscopedExecutorProvider: Provider = {
+            provide:
+                UNSCOPED_DATABASE_EXECUTOR,
             inject: [DATABASE_CONNECTION],
             useFactory: (
                 connection: DatabaseConnection,
             ): DatabaseExecutor => connection.db,
         };
 
-        const transactionRunnerProvider: Provider = {
-            provide:
-                DATABASE_TRANSACTION_RUNNER,
+        const unscopedTransactionRunnerProvider: Provider =
+            {
+                provide:
+                    UNSCOPED_DATABASE_TRANSACTION_RUNNER,
+                inject: [DATABASE_CONNECTION],
+                useFactory: (
+                    connection: DatabaseConnection,
+                ): DatabaseTransactionRunner =>
+                    connection.transactions,
+            };
+
+        const tenantDatabaseScopeProvider: Provider = {
+            provide: TENANT_DATABASE_SCOPE,
             inject: [DATABASE_CONNECTION],
             useFactory: (
                 connection: DatabaseConnection,
-            ): DatabaseTransactionRunner =>
-                connection.transactions,
+            ): TenantDatabaseScope =>
+                connection.tenantScope,
         };
 
         return {
             module: DatabaseModule,
             providers: [
                 connectionProvider,
-                executorProvider,
-                transactionRunnerProvider,
+                unscopedExecutorProvider,
+                unscopedTransactionRunnerProvider,
+                tenantDatabaseScopeProvider,
                 DatabaseLifecycleService,
             ],
             exports: [
-                DATABASE_EXECUTOR,
-                DATABASE_TRANSACTION_RUNNER,
+                UNSCOPED_DATABASE_EXECUTOR,
+                UNSCOPED_DATABASE_TRANSACTION_RUNNER,
+                TENANT_DATABASE_SCOPE,
             ],
         };
     }

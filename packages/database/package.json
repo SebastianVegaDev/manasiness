@@ -10,6 +10,10 @@
             "types": "./src/index.ts",
             "import": "./dist/index.js"
         },
+        "./schema": {
+            "types": "./src/schema/index.ts",
+            "import": "./dist/schema/index.js"
+        },
         "./testing": {
             "types": "./src/testing/index.ts",
             "import": "./dist/testing/index.js"
@@ -30,6 +34,7 @@
         "db:validate": "pnpm db:check && pnpm db:validate:migrations"
     },
     "dependencies": {
+        "@manasiness/platform-primitives": "workspace:*",
         "drizzle-orm": "0.45.3",
         "pg": "8.23.0",
         "zod": "4.6.5"

@@ -2,12 +2,28 @@
     "name": "@manasiness/web",
     "version": "0.0.0",
     "private": true,
+    "type": "module",
     "scripts": {
-        "lint": "eslint . --no-error-on-unmatched-pattern"
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint .",
+        "typecheck": "next typegen && tsc --noEmit",
+        "test": "node --test"
+    },
+    "dependencies": {
+        "next": "16.3.6",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+        "server-only": "0.0.1"
     },
     "devDependencies": {
         "@manasiness/eslint-config": "workspace:*",
         "@manasiness/typescript-config": "workspace:*",
+        "@next/eslint-plugin-next": "16.3.6",
+        "@types/node": "24.13.6",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
         "eslint": "10.11.0",
         "typescript": "6.0.3"
     }

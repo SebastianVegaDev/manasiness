@@ -25,7 +25,8 @@
                 "APP_ENV",
                 "API_*",
                 "WEB_*",
-                "NEXT_PUBLIC_*"
+                "NEXT_PUBLIC_*",
+                "DATABASE_*"
             ]
         },
         "lint": {

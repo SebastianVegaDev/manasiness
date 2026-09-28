@@ -4,14 +4,17 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "predev": "pnpm --filter @manasiness/database build",
         "dev": "nest start --watch",
         "build": "nest build",
+        "prestart": "pnpm --filter @manasiness/database build",
         "start": "node dist/main.js",
         "lint": "eslint . --no-error-on-unmatched-pattern",
         "typecheck": "tsc -p tsconfig.json --noEmit",
         "test": "node --test"
     },
     "dependencies": {
+        "@manasiness/database": "workspace:*",
         "@nestjs/common": "12.1.0",
         "@nestjs/core": "12.1.0",
         "@nestjs/platform-express": "12.1.0",

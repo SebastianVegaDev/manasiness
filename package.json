@@ -15,7 +15,16 @@
         "typecheck": "turbo run typecheck",
         "test": "turbo run test",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "db:up": "docker compose up -d --wait postgres",
+        "db:stop": "docker compose stop postgres",
+        "db:logs": "docker compose logs -f postgres",
+        "db:generate": "pnpm --filter @manasiness/database db:generate",
+        "db:check": "pnpm --filter @manasiness/database db:check",
+        "db:migrate": "pnpm --filter @manasiness/database db:migrate",
+        "db:reset:dev": "pnpm --filter @manasiness/database db:reset:dev",
+        "db:reset:test": "pnpm --filter @manasiness/database db:reset:test",
+        "db:validate": "pnpm --filter @manasiness/database db:validate"
     },
     "devDependencies": {
         "@manasiness/eslint-config": "workspace:*",

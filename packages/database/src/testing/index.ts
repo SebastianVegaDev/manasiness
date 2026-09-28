@@ -1,4 +1,8 @@
 import {
+    createDatabaseConnection,
+    type DatabaseConnection,
+} from '../connection/database-connection.js';
+import {
     loadDatabaseRuntimeConfig,
     type DatabaseEnvironmentSource,
     type DatabaseRuntimeConfig,
@@ -43,4 +47,30 @@ export function loadDatabaseTestRuntimeConfig(
                 'DATABASE_CONNECTION_TIMEOUT_MS'
             ],
     });
+}
+
+export async function withDatabaseTestConnection<T>(
+    environment: DatabaseEnvironmentSource,
+    operation: (
+        connection: DatabaseConnection,
+    ) => Promise<T>,
+): Promise<T> {
+    const config =
+        loadDatabaseTestRuntimeConfig(environment);
+
+    const connection = createDatabaseConnection(
+        config,
+        {
+            applicationName:
+                'manasiness-database-integration-test',
+        },
+    );
+
+    try {
+        await connection.verify();
+
+        return await operation(connection);
+    } finally {
+        await connection.close();
+    }
 }

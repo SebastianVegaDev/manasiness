@@ -1,7 +1,14 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
 import type { DatabaseRuntimeConfig } from '../config/database-runtime-config.js';
+import {
+    createDatabaseTransactionRunner,
+    type DatabaseTransactionRunner,
+} from '../transaction/database-transaction-runner.js';
+import {
+    createDatabaseClient,
+    type DatabaseClient,
+} from './database-client.js';
 
 export interface CreateDatabaseConnectionOptions {
     readonly applicationName?: string;
@@ -25,14 +32,17 @@ export function createDatabaseConnection(
               }),
     });
 
-    const db = drizzle({
-        client: pool,
-    });
+    const db: DatabaseClient =
+        createDatabaseClient(pool);
+
+    const transactions: DatabaseTransactionRunner =
+        createDatabaseTransactionRunner(pool);
 
     let closed = false;
 
     return Object.freeze({
         db,
+        transactions,
 
         async verify(): Promise<void> {
             if (closed) {
@@ -59,5 +69,3 @@ export function createDatabaseConnection(
 export type DatabaseConnection = ReturnType<
     typeof createDatabaseConnection
 >;
-
-export type DatabaseClient = DatabaseConnection['db'];

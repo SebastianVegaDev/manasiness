@@ -10,13 +10,18 @@ import {
 
 import {
     createDatabaseConnection,
-    type DatabaseClient,
     type DatabaseConnection,
+    type DatabaseExecutor,
     type DatabaseRuntimeConfig,
+    type DatabaseTransactionRunner,
 } from '@manasiness/database';
 
-export const DATABASE_CLIENT = Symbol(
-    'MANASINESS_DATABASE_CLIENT',
+export const DATABASE_EXECUTOR = Symbol(
+    'MANASINESS_DATABASE_EXECUTOR',
+);
+
+export const DATABASE_TRANSACTION_RUNNER = Symbol(
+    'MANASINESS_DATABASE_TRANSACTION_RUNNER',
 );
 
 const DATABASE_CONNECTION = Symbol(
@@ -65,22 +70,36 @@ export class DatabaseModule {
                 ),
         };
 
-        const clientProvider: Provider = {
-            provide: DATABASE_CLIENT,
+        const executorProvider: Provider = {
+            provide: DATABASE_EXECUTOR,
             inject: [DATABASE_CONNECTION],
             useFactory: (
                 connection: DatabaseConnection,
-            ): DatabaseClient => connection.db,
+            ): DatabaseExecutor => connection.db,
+        };
+
+        const transactionRunnerProvider: Provider = {
+            provide:
+                DATABASE_TRANSACTION_RUNNER,
+            inject: [DATABASE_CONNECTION],
+            useFactory: (
+                connection: DatabaseConnection,
+            ): DatabaseTransactionRunner =>
+                connection.transactions,
         };
 
         return {
             module: DatabaseModule,
             providers: [
                 connectionProvider,
-                clientProvider,
+                executorProvider,
+                transactionRunnerProvider,
                 DatabaseLifecycleService,
             ],
-            exports: [DATABASE_CLIENT],
+            exports: [
+                DATABASE_EXECUTOR,
+                DATABASE_TRANSACTION_RUNNER,
+            ],
         };
     }
 }

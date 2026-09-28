@@ -2,9 +2,9 @@
 
 `platform/` contains technical capabilities required by the web application that are not owned by a product feature.
 
-Examples may eventually include:
+Examples include:
 
-- runtime environment access;
+- runtime configuration;
 - API transport infrastructure;
 - observability integration;
 - browser/runtime adapters;
@@ -16,9 +16,9 @@ Business rules remain owned by the backend/domain capabilities that define them.
 
 ## Server and client boundaries
 
-Next.js modules may execute in different runtime contexts.
+Next.js code may execute in different runtime contexts.
 
-Code that handles secrets, privileged credentials, or server-only infrastructure must remain explicitly server-only.
+Code that handles secrets, privileged credentials, private service addresses, or server-only infrastructure must remain explicitly server-only.
 
 Use:
 
@@ -28,15 +28,41 @@ import 'server-only';
 
 for modules that must never enter a Client Component dependency graph.
 
-Do not expose a value through `NEXT_PUBLIC_*` unless it is intentionally public.
+## Runtime configuration
 
-## Environment configuration
+Environment access is centralized under:
 
-The current environment boundary is intentionally minimal.
+```text
+platform/environment/
+```
 
-Issue #27 owns the complete typed runtime-configuration strategy.
+The current configuration model deliberately separates:
 
-Until then, new environment access should not be scattered throughout route components.
+```text
+server-only runtime configuration
+```
+
+from:
+
+```text
+browser-safe build configuration
+```
+
+Feature code must not read arbitrary `process.env` values.
+
+## Public configuration
+
+Only explicitly allowlisted `NEXT_PUBLIC_*` values may enter browser bundles.
+
+A `NEXT_PUBLIC_*` prefix is an exposure decision.
+
+It must never be applied to a value merely to make it accessible from a Client Component.
+
+## Server configuration
+
+Private server configuration is validated through the server environment boundary and protected with `server-only`.
+
+The Next.js instrumentation hook validates required Node-runtime configuration before the server becomes ready.
 
 ## Data access
 
@@ -44,4 +70,4 @@ The web application must not connect directly to PostgreSQL or duplicate backend
 
 Future data access should cross an approved API/application boundary.
 
-Server Components are allowed to perform server-side application/API communication, but being server-side does not make them owners of backend business rules.
+Server Components may perform server-side API communication, but being server-side does not make them owners of backend business rules.

@@ -2,7 +2,7 @@
     "extends": "@manasiness/typescript-config/node.json",
     "compilerOptions": {
         "noEmit": false,
-        "rootDir": "./src",
+        "rootDir": ".",
         "outDir": "./dist",
         "sourceMap": true,
         "noEmitOnError": true,

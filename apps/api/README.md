@@ -11,23 +11,103 @@ The API uses:
 - Node.js 24;
 - NestJS 12;
 - TypeScript with the repository NodeNext configuration;
-- Express through the NestJS platform adapter.
+- Express through the NestJS platform adapter;
+- Zod for runtime configuration validation.
 
 The application is an ES module.
 
 ## Local development
 
-From the repository root:
+Create the local environment file:
 
-```bash
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+```
+
+Then run:
+
+```powershell
 pnpm --filter @manasiness/api dev
 ```
 
-The default local address is:
+The example configuration starts the API at:
 
 ```text
 http://127.0.0.1:3001
 ```
+
+## Runtime configuration
+
+Environment access is centralized under:
+
+```text
+src/platform/config/
+```
+
+Feature and domain code must not read `process.env` directly.
+
+The current configuration contract is:
+
+| Variable               | Required | Default          | Purpose                                 |
+| ---------------------- | -------- | ---------------- | --------------------------------------- |
+| `APP_ENV`              | yes      | none             | Runtime/deployment classification       |
+| `API_SERVICE_NAME`     | no       | `manasiness-api` | Stable process/service identity         |
+| `API_LOG_LEVEL`        | no       | `info`           | Nest bootstrap log level                |
+| `API_HOST`             | no       | `127.0.0.1`      | HTTP bind host                          |
+| `API_PORT`             | no       | `3001`           | HTTP port                               |
+| `API_BODY_LIMIT_BYTES` | no       | `1048576`        | JSON/urlencoded body limit              |
+| `API_CORS_ORIGINS`     | no       | none             | Comma-separated allowed browser origins |
+
+`APP_ENV` accepts:
+
+```text
+development
+test
+production
+```
+
+`API_LOG_LEVEL` accepts:
+
+```text
+debug
+info
+warn
+error
+```
+
+Configuration is validated before the API begins listening.
+
+Invalid configuration fails startup with field-oriented errors.
+
+Configuration validation must never serialize the complete environment or raw secret values.
+
+## `.env` loading
+
+The API uses Node.js's native `.env` support.
+
+`apps/api/.env` supplies values that were not already supplied by the process environment.
+
+Deployment-provided environment variables therefore remain authoritative over local `.env` values.
+
+`.env` is a developer convenience, not a production secret-management strategy.
+
+## CORS
+
+CORS is closed by default when `API_CORS_ORIGINS` is empty.
+
+For local web development:
+
+```text
+API_CORS_ORIGINS=http://localhost:3000
+```
+
+Multiple origins are comma-separated:
+
+```text
+API_CORS_ORIGINS=https://app.example.com,https://admin.example.com
+```
+
+CORS is not an authorization mechanism.
 
 ## Liveness
 
@@ -49,37 +129,6 @@ Liveness deliberately does not depend on PostgreSQL or product-domain state.
 
 Dependency readiness belongs to the later observability foundation.
 
-## Bootstrap configuration
-
-Issue #25 keeps configuration deliberately small. The complete typed runtime-configuration boundary is owned by Issue #27.
-
-Current bootstrap variables are:
-
-| Variable               | Default     | Purpose                                         |
-| ---------------------- | ----------- | ----------------------------------------------- |
-| `API_HOST`             | `127.0.0.1` | Network interface used by the HTTP listener     |
-| `API_PORT`             | `3001`      | HTTP port                                       |
-| `API_BODY_LIMIT_BYTES` | `1048576`   | Maximum JSON/urlencoded request body size       |
-| `API_CORS_ORIGINS`     | none        | Comma-separated browser origins allowed by CORS |
-
-The local default binds only to the loopback interface.
-
-A deployment or container that intentionally needs external binding can set:
-
-```text
-API_HOST=0.0.0.0
-```
-
-CORS is closed by default.
-
-For example, when the web application later runs locally on port 3000:
-
-```powershell
-$env:API_CORS_ORIGINS = "http://localhost:3000"
-```
-
-Do not use CORS as an authorization mechanism.
-
 ## Source layout
 
 ```text
@@ -91,62 +140,77 @@ src/
         # Future business/domain modules
 
     platform/
-        bootstrap/
+        config/
         health/
         http/
 ```
 
-`AppModule` is the application composition root.
+`AppModule` is the composition root.
 
 `modules/` owns future business capabilities.
 
-`platform/` owns cross-cutting runtime infrastructure and must not become a generic business-code dumping ground.
+`platform/` owns technical runtime infrastructure and must not become a generic business-code dumping ground.
 
-See [`src/modules/README.md`](src/modules/README.md) for module ownership conventions.
+## Testing configuration
+
+Configuration loaders accept an explicit environment object.
+
+Tests should use:
+
+```text
+test/support/api-environment.ts
+```
+
+instead of mutating global `process.env`.
+
+This keeps configuration tests deterministic and isolated.
+
+## Database configuration
+
+No `DATABASE_URL` exists in this configuration contract yet.
+
+Issue #28 owns the PostgreSQL/Drizzle integration. Database configuration becomes required when a runtime actually consumes it.
+
+Environment variables must not be added preemptively simply because a later capability may need them.
 
 ## Commands
 
 Development:
 
-```bash
+```powershell
 pnpm --filter @manasiness/api dev
 ```
 
 Build:
 
-```bash
+```powershell
 pnpm --filter @manasiness/api build
 ```
 
 Typecheck:
 
-```bash
+```powershell
 pnpm --filter @manasiness/api typecheck
 ```
 
 Lint:
 
-```bash
+```powershell
 pnpm --filter @manasiness/api lint
 ```
 
-Run the built artifact:
+Production artifact:
 
-```bash
+```powershell
 pnpm --filter @manasiness/api start
 ```
 
-Testing infrastructure is intentionally minimal in this issue. M1 Issue #34 owns the complete unit, integration, API, and browser-test foundation.
-
 ## Boundaries
 
-This application must not introduce business capabilities through platform code.
-
-In particular:
-
+- runtime configuration is platform infrastructure;
+- domain code does not read environment variables directly;
+- environment variables do not represent Organization business settings;
 - controllers do not own business invariants;
 - one module does not directly mutate another module's persistence;
 - cross-domain orchestration belongs in explicit application capabilities;
-- the web application never imports API implementation internals;
-- shared packages do not depend on this application;
-- no microservice or messaging infrastructure is introduced without a concrete requirement.
+- shared packages do not depend on this application.

@@ -48,15 +48,11 @@ Do not create an independent interface that duplicates a Zod schema.
 Prefer:
 
 ```typescript
-export const createThingRequestSchema =
-    z.strictObject({
-        name: z.string().min(1),
-    });
+export const createThingRequestSchema = z.strictObject({
+    name: z.string().min(1),
+});
 
-export type CreateThingRequest =
-    z.output<
-        typeof createThingRequestSchema
-    >;
+export type CreateThingRequest = z.output<typeof createThingRequestSchema>;
 ```
 
 Avoid:
@@ -152,7 +148,7 @@ Zod schemas can transform values.
 For example:
 
 ```typescript
-z.coerce.number()
+z.coerce.number();
 ```
 
 may receive a query-string value and produce a number.
@@ -203,9 +199,7 @@ Validation errors may additionally contain:
 {
     "issues": [
         {
-            "path": [
-                "email"
-            ],
+            "path": ["email"],
             "message": "Invalid email address."
         }
     ]
@@ -387,10 +381,7 @@ A generated client must not become the place where business rules are defined.
 Consumers import from:
 
 ```typescript
-import {
-    apiErrorResponseSchema,
-    contractExampleRequestSchema,
-} from '@manasiness/contracts';
+import { apiErrorResponseSchema, contractExampleRequestSchema } from '@manasiness/contracts';
 ```
 
 Do not deep-import package internals such as:

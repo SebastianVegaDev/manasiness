@@ -1,19 +1,8 @@
-import {
-    SerializeOptions,
-    applyDecorators,
-} from '@nestjs/common';
-import {
-    ApiResponse,
-    type ApiResponseOptions,
-} from '@nestjs/swagger';
-import {
-    z,
-    type ZodType,
-} from 'zod';
+import { SerializeOptions, applyDecorators } from '@nestjs/common';
+import { ApiResponse, type ApiResponseOptions } from '@nestjs/swagger';
+import { z, type ZodType } from 'zod';
 
-import {
-    apiErrorResponseSchema,
-} from '@manasiness/contracts';
+import { apiErrorResponseSchema } from '@manasiness/contracts';
 
 export interface ApiContractResponseOptions {
     readonly status: number;
@@ -23,9 +12,7 @@ export interface ApiContractResponseOptions {
     readonly schema: ZodType;
 }
 
-export function ApiContractResponse(
-    options: ApiContractResponseOptions,
-): MethodDecorator {
+export function ApiContractResponse(options: ApiContractResponseOptions): MethodDecorator {
     return applyDecorators(
         SerializeOptions({
             schema: options.schema,
@@ -34,18 +21,14 @@ export function ApiContractResponse(
         ApiResponse(
             createSwaggerResponse({
                 status: options.status,
-                description:
-                    options.description,
+                description: options.description,
                 schema: options.schema,
             }),
         ),
     );
 }
 
-export function ApiContractErrorResponse(
-    status: number,
-    description: string,
-): MethodDecorator {
+export function ApiContractErrorResponse(status: number, description: string): MethodDecorator {
     return ApiResponse(
         createSwaggerResponse({
             status,
@@ -55,21 +38,15 @@ export function ApiContractErrorResponse(
     );
 }
 
-function createSwaggerResponse(
-    options: ApiContractResponseOptions,
-): ApiResponseOptions {
+function createSwaggerResponse(options: ApiContractResponseOptions): ApiResponseOptions {
     return {
         status: options.status,
 
-        description:
-            options.description,
+        description: options.description,
 
-        schema: z.toJSONSchema(
-            options.schema,
-            {
-                target: 'openapi-3.0',
-                io: 'output',
-            },
-        ),
+        schema: z.toJSONSchema(options.schema, {
+            target: 'openapi-3.0',
+            io: 'output',
+        }),
     } as ApiResponseOptions;
 }

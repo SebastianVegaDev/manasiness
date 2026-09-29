@@ -1,9 +1,6 @@
 import { loadEnvFile } from 'node:process';
 
-const databaseToolingEnvironmentFile = new URL(
-    '../../.env',
-    import.meta.url,
-);
+const databaseToolingEnvironmentFile = new URL('../../.env', import.meta.url);
 
 export function loadDatabaseToolingEnvironmentFileIfPresent(): void {
     try {
@@ -13,9 +10,7 @@ export function loadDatabaseToolingEnvironmentFileIfPresent(): void {
             return;
         }
 
-        throw new Error(
-            'Unable to load packages/database/.env.',
-        );
+        throw new Error('Unable to load packages/database/.env.');
     }
 }
 

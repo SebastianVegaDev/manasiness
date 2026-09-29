@@ -16,9 +16,7 @@ try {
     await connection.verify();
     await applyDatabaseMigrations(connection.db);
 
-    console.info(
-        'Database migrations applied successfully.',
-    );
+    console.info('Database migrations applied successfully.');
 } finally {
     await connection.close();
 }

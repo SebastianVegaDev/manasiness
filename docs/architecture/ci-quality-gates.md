@@ -68,13 +68,12 @@ CI build success does not mean the application has been deployed.
 
 ## Lint
 
-`Lint` checks formatting for added and modified files in the current PR or push, then executes:
+`Lint` checks formatting for the complete repository, then executes:
 
 ```powershell
+pnpm format:check
 pnpm lint
 ```
-
-The formatting check is incremental because the existing repository has files that do not yet match Prettier. `pnpm format:check` remains available for a full repository audit.
 
 Warnings must not be used to hide rule violations that should fail CI.
 
@@ -140,7 +139,7 @@ A successful application test suite therefore cannot hide a broken migration his
 
 `Browser E2E` executes only after the core quality gates succeed.
 
-It installs the Playwright Chromium runtime, builds fresh Web and API artifacts, and executes:
+It installs the Playwright Chromium runtime and executes:
 
 ```powershell
 pnpm test:e2e
@@ -154,7 +153,7 @@ API        127.0.0.1:3101
 PostgreSQL manasiness_test
 ```
 
-The browser harness starts the built Web and API servers as direct Node processes and does not reuse manually running development servers.
+The browser harness builds and starts the API artifact, then starts the Web development runtime with test configuration. Both servers run as direct Node processes so Playwright can stop them reliably. The separate `Build` gate validates the complete production build.
 
 Failure traces, screenshots, videos, and the HTML report are uploaded as short-lived GitHub Actions artifacts.
 
@@ -366,7 +365,7 @@ as a merge-required check because it is a scheduled monitoring signal rather tha
 Before pushing a consequential change, the complete local equivalent is:
 
 ```powershell
-pnpm exec prettier --check <changed files>
+pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm build

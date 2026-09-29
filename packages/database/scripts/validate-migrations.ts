@@ -12,10 +12,7 @@ import { loadDatabaseToolingEnvironmentFileIfPresent } from './support/tooling-e
 
 loadDatabaseToolingEnvironmentFileIfPresent();
 
-const databaseUrl = readDatabaseToolingUrl(
-    process.env,
-    'DATABASE_MIGRATION_VALIDATION_URL',
-);
+const databaseUrl = readDatabaseToolingUrl(process.env, 'DATABASE_MIGRATION_VALIDATION_URL');
 
 assertSafeMigrationValidationTarget(databaseUrl);
 
@@ -29,8 +26,7 @@ const config = loadDatabaseRuntimeConfig({
 await resetDatabaseSchemas(databaseUrl);
 
 const connection = createDatabaseConnection(config, {
-    applicationName:
-        'manasiness-migration-validation',
+    applicationName: 'manasiness-migration-validation',
 });
 
 try {
@@ -40,9 +36,7 @@ try {
 
     await connection.verify();
 
-    console.info(
-        'Complete migration history applied successfully to a clean validation database.',
-    );
+    console.info('Complete migration history applied successfully to a clean validation database.');
 } finally {
     await connection.close();
 }

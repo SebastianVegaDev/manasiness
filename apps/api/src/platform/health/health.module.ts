@@ -1,7 +1,4 @@
-import {
-    Module,
-    type DynamicModule,
-} from '@nestjs/common';
+import { Module, type DynamicModule } from '@nestjs/common';
 
 import { HealthController } from './health.controller.js';
 import {
@@ -16,9 +13,7 @@ export interface HealthModuleOptions {
 
 @Module({})
 export class HealthModule {
-    static register(
-        options: HealthModuleOptions,
-    ): DynamicModule {
+    static register(options: HealthModuleOptions): DynamicModule {
         return {
             module: HealthModule,
             controllers: [HealthController],

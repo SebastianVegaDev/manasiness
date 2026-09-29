@@ -74,7 +74,6 @@ jobs:
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
-                  fetch-depth: 0
 
             - name: Setup repository toolchain
               uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
@@ -97,11 +96,7 @@ jobs:
                       turbo-${{ runner.os }}-lint-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json') }}-
 
             - name: Verify formatting
-              env:
-                  FORMAT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-              run: |
-                  git diff --name-only --diff-filter=ACMRT -z "$FORMAT_BASE_SHA" "$GITHUB_SHA" |
-                    xargs -0 -r pnpm exec prettier --check --ignore-unknown
+              run: pnpm format:check
 
             - name: Run static analysis
               run: pnpm lint
@@ -271,13 +266,6 @@ jobs:
 
             - name: Install Playwright Chromium
               run: pnpm exec playwright install --with-deps chromium
-
-            - name: Build browser test servers
-              env:
-                  APP_ENV: test
-                  WEB_API_ORIGIN: http://127.0.0.1:3101
-                  NEXT_PUBLIC_API_ORIGIN: http://127.0.0.1:3101
-              run: pnpm build
 
             - name: Run integrated browser smoke test
               env:

@@ -12,10 +12,7 @@ import { loadDatabaseToolingEnvironmentFileIfPresent } from './support/tooling-e
 
 loadDatabaseToolingEnvironmentFileIfPresent();
 
-const databaseUrl = readDatabaseToolingUrl(
-    process.env,
-    'DATABASE_URL',
-);
+const databaseUrl = readDatabaseToolingUrl(process.env, 'DATABASE_URL');
 
 assertSafeDevelopmentResetTarget(databaseUrl);
 
@@ -31,9 +28,7 @@ try {
     await connection.verify();
     await applyDatabaseMigrations(connection.db);
 
-    console.info(
-        'Development database reset and migrations completed successfully.',
-    );
+    console.info('Development database reset and migrations completed successfully.');
 } finally {
     await connection.close();
 }

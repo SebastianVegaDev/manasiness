@@ -23,11 +23,7 @@ export default [
 
     {
         name: 'manasiness/root-typescript-project',
-        files: [
-            'vitest.config.ts',
-            'playwright.config.ts',
-            'tests/**/*.ts',
-        ],
+        files: ['vitest.config.ts', 'playwright.config.ts', 'tests/**/*.ts'],
         languageOptions: {
             parserOptions: {
                 projectService: false,
@@ -63,13 +59,11 @@ export default [
                     patterns: [
                         {
                             group: ['@manasiness/api', '@manasiness/api/*'],
-                            message:
-                                'Reusable packages must not depend on the API application.',
+                            message: 'Reusable packages must not depend on the API application.',
                         },
                         {
                             group: ['@manasiness/web', '@manasiness/web/*'],
-                            message:
-                                'Reusable packages must not depend on the web application.',
+                            message: 'Reusable packages must not depend on the web application.',
                         },
                         {
                             group: ['@manasiness/*/*'],

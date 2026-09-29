@@ -8,31 +8,20 @@ export type LocalDate = string & {
 
 const localDateSchema = z.iso.date();
 
-export function parseLocalDate(
-    value: string,
-): LocalDate {
+export function parseLocalDate(value: string): LocalDate {
     const result = localDateSchema.safeParse(value);
 
     if (!result.success) {
-        throw new TypeError(
-            'Expected a valid ISO calendar date in YYYY-MM-DD format.',
-        );
+        throw new TypeError('Expected a valid ISO calendar date in YYYY-MM-DD format.');
     }
 
     return result.data as LocalDate;
 }
 
-export function isLocalDate(
-    value: unknown,
-): value is LocalDate {
-    return (
-        typeof value === 'string' &&
-        localDateSchema.safeParse(value).success
-    );
+export function isLocalDate(value: unknown): value is LocalDate {
+    return typeof value === 'string' && localDateSchema.safeParse(value).success;
 }
 
-export function serializeLocalDate(
-    value: LocalDate,
-): string {
+export function serializeLocalDate(value: LocalDate): string {
     return value;
 }

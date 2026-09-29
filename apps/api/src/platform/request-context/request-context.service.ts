@@ -8,24 +8,18 @@ export interface RequestContextState {
 
 @Injectable()
 export class RequestContextService {
-    private readonly storage =
-        new AsyncLocalStorage<RequestContextState>();
+    private readonly storage = new AsyncLocalStorage<RequestContextState>();
 
-    run<T>(
-        context: RequestContextState,
-        operation: () => T,
-    ): T {
+    run<T>(context: RequestContextState, operation: () => T): T {
         return this.storage.run(
             Object.freeze({
-                requestId:
-                    context.requestId,
+                requestId: context.requestId,
             }),
             operation,
         );
     }
 
     getRequestId(): string | undefined {
-        return this.storage.getStore()
-            ?.requestId;
+        return this.storage.getStore()?.requestId;
     }
 }

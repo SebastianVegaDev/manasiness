@@ -5,21 +5,16 @@ import type { Pool, PoolClient } from 'pg';
 import { createDatabaseClient } from '../connection/database-client.js';
 import type { DatabaseExecutor } from './database-executor.js';
 
-const beginTransactionStatement =
-    'BEGIN ISOLATION LEVEL READ COMMITTED READ WRITE';
+const beginTransactionStatement = 'BEGIN ISOLATION LEVEL READ COMMITTED READ WRITE';
 
 export interface DatabaseTransactionContext {
     readonly executor: DatabaseExecutor;
 }
 
-export type DatabaseTransactionOperation<T> = (
-    context: DatabaseTransactionContext,
-) => Promise<T>;
+export type DatabaseTransactionOperation<T> = (context: DatabaseTransactionContext) => Promise<T>;
 
 export interface DatabaseTransactionRunner {
-    run<T>(
-        operation: DatabaseTransactionOperation<T>,
-    ): Promise<T>;
+    run<T>(operation: DatabaseTransactionOperation<T>): Promise<T>;
 }
 
 export class NestedDatabaseTransactionError extends Error {
@@ -32,27 +27,17 @@ export class NestedDatabaseTransactionError extends Error {
     }
 }
 
-export function createDatabaseTransactionRunner(
-    pool: Pool,
-): DatabaseTransactionRunner {
-    const transactionScope =
-        new AsyncLocalStorage<boolean>();
+export function createDatabaseTransactionRunner(pool: Pool): DatabaseTransactionRunner {
+    const transactionScope = new AsyncLocalStorage<boolean>();
 
     return Object.freeze({
-        async run<T>(
-            operation: DatabaseTransactionOperation<T>,
-        ): Promise<T> {
+        async run<T>(operation: DatabaseTransactionOperation<T>): Promise<T> {
             if (transactionScope.getStore() === true) {
                 throw new NestedDatabaseTransactionError();
             }
 
-            return transactionScope.run(
-                true,
-                async (): Promise<T> =>
-                    executeTopLevelTransaction(
-                        pool,
-                        operation,
-                    ),
+            return transactionScope.run(true, async (): Promise<T> =>
+                executeTopLevelTransaction(pool, operation),
             );
         },
     });
@@ -69,9 +54,7 @@ async function executeTopLevelTransaction<T>(
 
     try {
         try {
-            await client.query(
-                beginTransactionStatement,
-            );
+            await client.query(beginTransactionStatement);
 
             transactionOpen = true;
         } catch (beginError: unknown) {
@@ -80,31 +63,25 @@ async function executeTopLevelTransaction<T>(
             throw beginError;
         }
 
-        const executor: DatabaseExecutor =
-            createDatabaseClient(client);
+        const executor: DatabaseExecutor = createDatabaseClient(client);
 
-        const context =
-            Object.freeze<DatabaseTransactionContext>({
-                executor,
-            });
+        const context = Object.freeze<DatabaseTransactionContext>({
+            executor,
+        });
 
         let result: T;
 
         try {
             result = await operation(context);
         } catch (operationError: unknown) {
-            const rollbackError =
-                await tryRollback(client);
+            const rollbackError = await tryRollback(client);
 
             transactionOpen = false;
 
             if (rollbackError !== undefined) {
                 destroyClient = true;
 
-                throw createRollbackFailureError(
-                    operationError,
-                    rollbackError.error,
-                );
+                throw createRollbackFailureError(operationError, rollbackError.error);
             }
 
             throw operationError;
@@ -119,24 +96,19 @@ async function executeTopLevelTransaction<T>(
         } catch (commitError: unknown) {
             destroyClient = true;
 
-            const rollbackError =
-                await tryRollback(client);
+            const rollbackError = await tryRollback(client);
 
             transactionOpen = false;
 
             if (rollbackError !== undefined) {
-                throw createRollbackFailureError(
-                    commitError,
-                    rollbackError.error,
-                );
+                throw createRollbackFailureError(commitError, rollbackError.error);
             }
 
             throw commitError;
         }
     } finally {
         if (transactionOpen) {
-            const rollbackError =
-                await tryRollback(client);
+            const rollbackError = await tryRollback(client);
 
             if (rollbackError !== undefined) {
                 destroyClient = true;
@@ -147,9 +119,7 @@ async function executeTopLevelTransaction<T>(
     }
 }
 
-async function tryRollback(
-    client: PoolClient,
-): Promise<{ error: unknown } | undefined> {
+async function tryRollback(client: PoolClient): Promise<{ error: unknown } | undefined> {
     try {
         await client.query('ROLLBACK');
 

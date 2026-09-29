@@ -266,6 +266,8 @@ docs/architecture/
 
 Read relevant policies when a change affects several modules/domains or platform-wide behavior.
 
+The [M1 engineering platform map](docs/architecture/m1-engineering-platform.md) records the verified baseline and intentional deferrals. [Runtime configuration](docs/architecture/runtime-configuration.md) documents environment ownership.
+
 ### ADRs
 
 ```text
@@ -569,6 +571,7 @@ pnpm test:e2e
 ```
 
 The E2E environment uses isolated Web/API ports and the dedicated test database.
+Playwright starts both applications with test configuration, so `pnpm test:e2e` does not depend on the origin embedded in a previous production Web build.
 
 ### Everything
 

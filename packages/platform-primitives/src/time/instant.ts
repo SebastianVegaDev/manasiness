@@ -5,11 +5,8 @@ const serializedInstantSchema = z.iso.datetime({
     precision: 3,
 });
 
-export function parseInstant(
-    value: string,
-): Date {
-    const result =
-        serializedInstantSchema.safeParse(value);
+export function parseInstant(value: string): Date {
+    const result = serializedInstantSchema.safeParse(value);
 
     if (!result.success) {
         throw new TypeError(
@@ -20,31 +17,20 @@ export function parseInstant(
     const instant = new Date(result.data);
 
     if (!isValidInstant(instant)) {
-        throw new TypeError(
-            'Expected a valid absolute instant.',
-        );
+        throw new TypeError('Expected a valid absolute instant.');
     }
 
     return instant;
 }
 
-export function serializeInstant(
-    value: Date,
-): string {
+export function serializeInstant(value: Date): string {
     if (!isValidInstant(value)) {
-        throw new TypeError(
-            'Cannot serialize an invalid instant.',
-        );
+        throw new TypeError('Cannot serialize an invalid instant.');
     }
 
     return value.toISOString();
 }
 
-export function isValidInstant(
-    value: unknown,
-): value is Date {
-    return (
-        value instanceof Date &&
-        !Number.isNaN(value.getTime())
-    );
+export function isValidInstant(value: unknown): value is Date {
+    return value instanceof Date && !Number.isNaN(value.getTime());
 }

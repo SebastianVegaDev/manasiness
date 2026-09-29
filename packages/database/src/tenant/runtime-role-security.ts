@@ -10,12 +10,9 @@ interface RuntimeRoleSecurityRow extends Record<string, unknown> {
     readonly canCreateInPublicSchema: boolean;
 }
 
-export async function assertRlsSafeRuntimeDatabaseRole(
-    executor: DatabaseExecutor,
-): Promise<void> {
-    const result =
-        await executor.execute<RuntimeRoleSecurityRow>(
-            sql`
+export async function assertRlsSafeRuntimeDatabaseRole(executor: DatabaseExecutor): Promise<void> {
+    const result = await executor.execute<RuntimeRoleSecurityRow>(
+        sql`
                 SELECT
                     role.rolname AS "roleName",
                     role.rolsuper AS "isSuperuser",
@@ -32,14 +29,12 @@ export async function assertRlsSafeRuntimeDatabaseRole(
                     ON database.datname = current_database()
                 WHERE role.rolname = current_user
             `,
-        );
+    );
 
     const role = result.rows[0];
 
     if (role === undefined) {
-        throw new Error(
-            'Unable to inspect the current database runtime role.',
-        );
+        throw new Error('Unable to inspect the current database runtime role.');
     }
 
     const unsafeCapabilities: string[] = [];
@@ -57,9 +52,7 @@ export async function assertRlsSafeRuntimeDatabaseRole(
     }
 
     if (role.canCreateInPublicSchema) {
-        unsafeCapabilities.push(
-            'CREATE privilege on public schema',
-        );
+        unsafeCapabilities.push('CREATE privilege on public schema');
     }
 
     if (unsafeCapabilities.length === 0) {
@@ -68,8 +61,6 @@ export async function assertRlsSafeRuntimeDatabaseRole(
 
     throw new Error(
         `Unsafe database runtime role "${role.roleName}". ` +
-            `Application runtime must not have: ${unsafeCapabilities.join(
-                ', ',
-            )}.`,
+            `Application runtime must not have: ${unsafeCapabilities.join(', ')}.`,
     );
 }

@@ -4,7 +4,7 @@ Manasiness uses an issue-driven engineering workflow.
 
 Repository changes should remain reviewable, attributable to an explicit responsibility, and consistent with the product/domain model.
 
-Read [`AGENTS.md`](https://chatgpt.com/c/AGENTS.md) before substantial implementation work.
+Read [`AGENTS.md`](AGENTS.md) before substantial implementation work.
 
 ## Workflow
 

@@ -21,16 +21,13 @@ export class ExpectedApplicationError extends Error {
 
     readonly publicMessage: string;
 
-    constructor(
-        options: ExpectedApplicationErrorOptions,
-    ) {
+    constructor(options: ExpectedApplicationErrorOptions) {
         super(options.publicMessage);
 
         this.name = 'ExpectedApplicationError';
 
         this.kind = options.kind;
         this.code = options.code;
-        this.publicMessage =
-            options.publicMessage;
+        this.publicMessage = options.publicMessage;
     }
 }

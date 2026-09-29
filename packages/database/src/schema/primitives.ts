@@ -1,14 +1,5 @@
-import type {
-    EntityId,
-    IanaTimeZone,
-    LocalDate,
-} from '@manasiness/platform-primitives';
-import {
-    date,
-    text,
-    timestamp,
-    uuid,
-} from 'drizzle-orm/pg-core';
+import type { EntityId, IanaTimeZone, LocalDate } from '@manasiness/platform-primitives';
+import { date, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export function entityIdColumn(name: string) {
     return uuid(name).$type<EntityId>();

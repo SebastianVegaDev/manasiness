@@ -1,458 +1,20 @@
 # Manasiness
 
-Manasiness is a multi-tenant business operations product being rebuilt from its domain model outward.
+Manasiness is a multi-tenant business operations platform being rebuilt from its domain model outward.
 
-Product scope and business semantics live under [`docs/`](docs/); implementation must conform to those documents rather than redefine them for convenience.
+The repository contains the executable product and engineering platform.
 
-M1 establishes the executable engineering platform before substantial product-domain implementation begins.
+The canonical product definition lives in:
 
-## Prerequisites
+[`docs/product/product-vision.md`](docs/product/product-vision.md)
 
-- Node.js 24.21.0;
-- pnpm 12.6.0;
-- Git;
-- Docker with Docker Compose v2.
-
-The repository pins pnpm through `packageManager` and declares the supported Node range in `package.json`.
-
-```bash
-corepack enable pnpm
-pnpm --version
-```
-
-`pnpm --version` should print:
-
-```text
-12.6.0
-```
-
-## Install
-
-Install workspace dependencies from the repository root:
-
-```bash
-pnpm install
-```
-
-The generated `pnpm-lock.yaml` is part of the repository contract and must be committed.
-
-Do not hand-edit it.
-
-## Local PostgreSQL
-
-Start the local PostgreSQL instance:
-
-```bash
-pnpm db:up
-```
-
-The development PostgreSQL server listens on:
-
-```text
-127.0.0.1:5432
-```
-
-Local databases are:
-
-```text
-manasiness_dev
-manasiness_test
-manasiness_migration_validation
-```
-
-Stop PostgreSQL with:
-
-```bash
-pnpm db:stop
-```
-
-See PostgreSQL logs with:
-
-```bash
-pnpm db:logs
-```
-
-Database workflow and migration policy are documented in:
-
-[`packages/database/README.md`](packages/database/README.md)
-
-## Workspace map
-
-```text
-apps/
-    api/                    # NestJS modular-monolith API runtime.
-    web/                    # Next.js App Router web runtime.
-
-packages/
-    contracts/              # Shared transport-contract boundary.
-    database/               # PostgreSQL/Drizzle infrastructure.
-    platform-primitives/    # Canonical technical ID/time primitives.
-    eslint-config/          # Shared lint policy.
-    typescript-config/      # Shared TypeScript policy.
-
-infra/
-    postgres/               # Reproducible local PostgreSQL initialization.
-
-docs/
-    product/                # Product vision and legacy migration knowledge.
-    domain/                 # Ubiquitous language and domain ownership.
-    architecture/           # Cross-cutting architecture policies.
-    adr/                    # Durable architecture decisions.
-```
-
-## Applications
-
-### `apps/api`
-
-The API is the server-side application runtime.
-
-It is built as a NestJS modular monolith.
-
-Product capabilities should eventually be organized around domain ownership rather than technical-controller groupings or one API module per screen.
-
-The API may depend on explicitly owned workspace packages.
-
-Reusable workspace packages must not depend on application internals.
-
-### `apps/web`
-
-The web application is the browser-facing Manasiness runtime built with Next.js App Router.
-
-UI implementation must consume explicit product and transport boundaries rather than redefine business semantics inside components.
-
-Browser code must never receive server-only secrets.
-
-Runtime and environment boundaries are established separately from product-domain behavior.
-
-## Workspace packages
-
-### `@manasiness/contracts`
-
-Owns shared transport-contract concerns.
-
-It must not become the owner of domain implementation or database infrastructure.
-
-Domain concepts should not be moved into contracts merely because both applications need to reference them.
-
-### `@manasiness/database`
-
-Owns PostgreSQL and Drizzle infrastructure, including:
-
-```text
-database connectivity
-migration infrastructure
-schema physical mappings
-database testing infrastructure
-```
-
-A shared database does not imply shared business ownership.
-
-Future schemas must continue to respect domain boundaries.
-
-### `@manasiness/platform-primitives`
-
-Owns a deliberately narrow set of technical representations standardized across the system.
-
-Its current ownership is:
-
-```text
-EntityId
-absolute-instant parsing/serialization
-LocalDate
-IanaTimeZone
-```
-
-It must not become a replacement for a generic:
-
-```text
-shared/
-common/
-utils/
-helpers/
-```
-
-package.
-
-Business concepts remain with their owning domains.
-
-Transport DTOs remain with `@manasiness/contracts`.
-
-Database infrastructure remains with `@manasiness/database`.
-
-### `@manasiness/eslint-config`
-
-Owns shared ESLint policy.
-
-Application and package-specific configuration may extend that policy without duplicating the entire repository lint setup.
-
-### `@manasiness/typescript-config`
-
-Owns shared TypeScript compiler policy for the repository.
-
-Individual applications and packages extend the appropriate base configuration for their runtime.
-
-## Canonical technical primitives
-
-M1 Issue #29 standardizes identifier and time representations before product-domain tables begin depending on them.
-
-Durable entity identifiers use:
-
-```text
-UUIDv7
-```
-
-PostgreSQL stores them as:
-
-```text
-uuid
-```
-
-Application-level textual IDs use canonical lowercase UUID representation.
-
-UUIDv7 identifiers remain opaque to business logic.
-
-Do not derive:
-
-```text
-createdAt
-business chronology
-Organization ownership
-entity type
-authorization
-```
-
-from UUID bits.
-
-Human-readable business references are separate concepts.
-
-For example:
-
-```text
-SALE-000142
-PUR-000091
-```
-
-must never replace canonical durable entity identity.
-
-Absolute application instants use JavaScript:
-
-```text
-Date
-```
-
-and PostgreSQL:
-
-```text
-timestamptz(3)
-```
-
-Boundary serialization is normalized to UTC RFC 3339 with exact millisecond precision:
-
-```text
-2026-09-28T21:14:10.123Z
-```
-
-Date-only concepts use:
-
-```text
-YYYY-MM-DD
-```
-
-and PostgreSQL:
-
-```text
-date
-```
-
-They are not represented as arbitrary midnight timestamps.
-
-Business timezone is explicit IANA data such as:
-
-```text
-America/Lima
-```
-
-and is never inferred from the server environment.
-
-Detailed rules live in:
-
-[`packages/platform-primitives/README.md`](packages/platform-primitives/README.md)
-
-and:
-
-[`packages/database/src/schema/README.md`](packages/database/src/schema/README.md)
-
-The architecture decision is recorded under:
-
-[`docs/adr/`](docs/adr/)
-
-## Root development commands
-
-Run the repository development workflow with:
-
-```bash
-pnpm dev
-```
-
-Run the complete build with:
-
-```bash
-pnpm build
-```
-
-Run linting with:
-
-```bash
-pnpm lint
-```
-
-Run TypeScript validation with:
-
-```bash
-pnpm typecheck
-```
-
-Run tests with:
-
-```bash
-pnpm test
-```
-
-Apply repository formatting with:
-
-```bash
-pnpm format
-```
-
-Verify formatting without modifying files:
-
-```bash
-pnpm format:check
-```
-
-## Database commands
-
-Start PostgreSQL:
-
-```bash
-pnpm db:up
-```
-
-Stop PostgreSQL:
-
-```bash
-pnpm db:stop
-```
-
-Inspect PostgreSQL logs:
-
-```bash
-pnpm db:logs
-```
-
-Generate Drizzle migrations:
-
-```bash
-pnpm db:generate
-```
-
-Check Drizzle migration metadata:
-
-```bash
-pnpm db:check
-```
-
-Apply migrations:
-
-```bash
-pnpm db:migrate
-```
-
-Reset the development database:
-
-```bash
-pnpm db:reset:dev
-```
-
-Reset the test database:
-
-```bash
-pnpm db:reset:test
-```
-
-Validate migration behavior:
-
-```bash
-pnpm db:validate
-```
-
-Destructive database commands contain additional target checks but should still be treated deliberately.
-
-Never run a destructive database command merely because it is convenient.
-
-## Quality gates
-
-Before opening or merging a pull request, the repository should satisfy the applicable quality gates.
-
-The normal complete validation sequence is:
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm build
-pnpm test
-```
-
-Database-related work should additionally validate the database workflow where applicable:
-
-```bash
-pnpm db:check
-pnpm db:validate
-```
-
-A workspace package may also be checked independently while developing it.
-
-For example:
-
-```bash
-pnpm --filter @manasiness/platform-primitives lint
-pnpm --filter @manasiness/platform-primitives typecheck
-pnpm --filter @manasiness/platform-primitives build
-pnpm --filter @manasiness/platform-primitives test
-```
-
-The root quality gates remain authoritative before integration.
-
-## Migration policy
-
-Migration history is source-controlled architecture.
-
-Do not rewrite an already-applied migration to make current schema state look cleaner.
-
-Schema evolution happens through new migrations.
-
-A schema change may require:
-
-```text
-new migration
-data backfill
-compatibility handling
-contract changes
-architecture review
-```
-
-depending on its impact.
-
-Migration generation should only happen when physical database schema changes actually require it.
-
-Adding a reusable Drizzle mapping helper does not by itself require a migration.
+Implementation must conform to the product/domain model rather than redefine business semantics for implementation convenience.
 
 ## Engineering direction
 
 Manasiness V1 is a modular monolith.
 
-The repository should optimize for:
+The repository optimizes for:
 
 ```text
 clear domain ownership
@@ -465,17 +27,696 @@ operational simplicity
 
 rather than unnecessary distribution.
 
-Applications may consume explicitly owned packages, but reusable packages must not depend on application internals.
+The governing source-of-truth hierarchy is:
 
-A shared PostgreSQL database does not imply shared business ownership.
+```text
+Product requirements
+        ↓
+Domain invariants
+        ↓
+Cross-cutting policies
+        ↓
+Architectural decisions
+        ↓
+Implementation convenience
+```
 
-Technical reuse must not erase domain boundaries.
+Implementation convenience must never silently weaken a product requirement or domain invariant.
+
+The canonical cross-cutting policies live in:
+
+[`docs/architecture/cross-cutting-policies.md`](docs/architecture/cross-cutting-policies.md)
+
+## Repository map
+
+```text
+apps/
+    api/
+        NestJS modular-monolith API runtime.
+
+    web/
+        Next.js App Router web runtime.
+
+packages/
+    contracts/
+        Shared transport-contract schemas and wire-level types.
+
+    database/
+        PostgreSQL, Drizzle, migration, transaction, tenant-scope,
+        and database-testing infrastructure.
+
+    platform-primitives/
+        Canonical technical identifier and time representations.
+
+    eslint-config/
+        Shared repository ESLint policy.
+
+    typescript-config/
+        Shared TypeScript compiler policy.
+
+docs/
+    product/
+        Product vision and legacy-product knowledge.
+
+    domain/
+        Ubiquitous language, domain ownership, boundaries,
+        invariants, and domain-specific rules.
+
+    architecture/
+        Cross-cutting technical/domain policies.
+
+    adr/
+        Architecture Decision Records.
+
+infra/
+    postgres/
+        Reproducible local PostgreSQL initialization.
+
+tests/
+    e2e/
+        Cross-application Playwright browser journeys.
+
+.github/
+    workflows/
+        CI and repository automation.
+```
+
+A new top-level directory or broadly shared package requires a clear responsibility and owner.
+
+Do not introduce generic buckets such as:
+
+```text
+shared/
+common/
+utils/
+helpers/
+```
+
+merely because code is used in more than one place.
+
+## Application ownership
+
+### `apps/api`
+
+`apps/api` is the server-side application runtime.
+
+It uses NestJS as a modular monolith.
+
+Product capabilities belong to explicit domain modules.
+
+Controllers are transport adapters.
+
+They must not become owners of:
+
+```text
+business invariants
+transaction policy
+cross-domain orchestration
+persistence ownership
+```
+
+A module must not arbitrarily modify another module's persistence.
+
+Cross-domain work happens through explicit application capabilities.
+
+### `apps/web`
+
+`apps/web` is the browser-facing application built with Next.js App Router.
+
+The Web consumes explicit application/transport boundaries.
+
+It must not:
+
+```text
+import backend implementation modules
+import @manasiness/database
+connect directly to PostgreSQL
+duplicate backend business rules
+treat cached server state as canonical business state
+```
+
+Web-to-API transport conventions live under:
+
+```text
+apps/web/src/platform/api/
+```
+
+Browser server state uses TanStack Query.
+
+Server-side API access and browser API access remain separate because their network and secret boundaries are different.
+
+### `packages/contracts`
+
+`@manasiness/contracts` owns shared transport-facing schemas.
+
+Examples:
+
+```text
+request schemas
+response schemas
+API error contracts
+transport IDs
+operational health responses
+```
+
+It does not own:
+
+```text
+domain entities
+repositories
+business invariants
+authorization
+database infrastructure
+NestJS implementation
+```
+
+Shared transport contracts are not shared domain models.
+
+### `packages/database`
+
+`@manasiness/database` owns PostgreSQL/Drizzle infrastructure.
+
+Responsibilities include:
+
+```text
+database connectivity
+transaction execution
+migration infrastructure
+physical schema mappings
+tenant database scope
+RLS support
+database testing infrastructure
+```
+
+A shared physical database does not imply shared business ownership.
+
+### `packages/platform-primitives`
+
+`@manasiness/platform-primitives` owns narrowly standardized technical representations such as:
+
+```text
+EntityId
+absolute instants
+LocalDate
+IANA time zones
+```
+
+It must not become a generic shared-code package.
+
+### `packages/eslint-config`
+
+Owns repository-wide ESLint policy.
+
+Workspace-specific configuration may extend it without recreating repository policy.
+
+### `packages/typescript-config`
+
+Owns shared TypeScript compiler policy.
+
+Applications/packages extend the configuration appropriate for their runtime.
+
+## Documentation map
+
+Start with the smallest relevant documentation set instead of reading every file.
+
+### Product
+
+```text
+docs/product/product-vision.md
+docs/product/legacy-audit.md
+```
+
+Use these to understand what Manasiness is and which legacy concepts should or should not survive.
+
+### Domain
+
+```text
+docs/domain/
+```
+
+Read the relevant domain document before changing business semantics.
+
+Domain documentation owns vocabulary, conceptual boundaries, and invariants.
+
+### Cross-cutting architecture
+
+```text
+docs/architecture/
+```
+
+Read relevant policies when a change affects several modules/domains or platform-wide behavior.
+
+### ADRs
+
+```text
+docs/adr/
+```
+
+ADRs preserve consequential architecture decisions and their rationale.
+
+Do not rewrite accepted ADR history to make current architecture appear cleaner.
+
+If a decision changes materially:
+
+```text
+create a new ADR
+        ↓
+supersede the previous ADR
+```
+
+## Prerequisites
+
+Required local tooling:
+
+```text
+Node.js 24.21.0
+pnpm 12.6.0
+Git
+Docker
+Docker Compose v2
+```
+
+The supported Node version is pinned by:
+
+```text
+.nvmrc
+package.json#engines
+```
+
+pnpm is pinned by:
+
+```text
+package.json#packageManager
+```
+
+Enable Corepack when necessary:
+
+```powershell
+corepack enable
+```
+
+Verify:
+
+```powershell
+node --version
+pnpm --version
+docker --version
+docker compose version
+```
+
+## First-time setup
+
+Install dependencies:
+
+```powershell
+pnpm install
+```
+
+Do not hand-edit:
+
+```text
+pnpm-lock.yaml
+```
+
+Create local environment files:
+
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env
+Copy-Item packages/database/.env.example packages/database/.env
+```
+
+Local environment files must not be committed.
+
+Start PostgreSQL:
+
+```powershell
+pnpm db:up
+```
+
+Apply the committed migration history:
+
+```powershell
+pnpm db:migrate
+```
+
+The local PostgreSQL server listens on:
+
+```text
+127.0.0.1:5432
+```
+
+The repository provisions dedicated databases for:
+
+```text
+manasiness_dev
+manasiness_test
+manasiness_migration_validation
+```
+
+## Development
+
+Start the repository development graph:
+
+```powershell
+pnpm dev
+```
+
+Individual applications may also be started separately.
+
+API:
+
+```powershell
+pnpm --filter @manasiness/api dev
+```
+
+Web:
+
+```powershell
+pnpm --filter @manasiness/web dev
+```
+
+Normal local addresses are:
+
+```text
+Web    http://localhost:3000
+API    http://127.0.0.1:3001
+```
+
+API liveness:
+
+```text
+GET /health/live
+```
+
+API readiness:
+
+```text
+GET /health/ready
+```
+
+## Database commands
+
+Start PostgreSQL:
+
+```powershell
+pnpm db:up
+```
+
+Stop it:
+
+```powershell
+pnpm db:stop
+```
+
+Inspect logs:
+
+```powershell
+pnpm db:logs
+```
+
+Generate migration files after an intentional physical schema change:
+
+```powershell
+pnpm db:generate
+```
+
+Check Drizzle migration metadata:
+
+```powershell
+pnpm db:check
+```
+
+Apply committed migrations:
+
+```powershell
+pnpm db:migrate
+```
+
+Reset the local development database:
+
+```powershell
+pnpm db:reset:dev
+```
+
+Reset the dedicated test database:
+
+```powershell
+pnpm db:reset:test
+```
+
+Validate the complete migration history against a clean validation database:
+
+```powershell
+pnpm db:validate
+```
+
+Destructive commands include destination safety checks but must still be used deliberately.
+
+Never run destructive database commands against a database whose purpose is unclear.
+
+## Migration policy
+
+Committed migrations are historical artifacts.
+
+Do not rewrite an already-applied migration because a newer schema design looks cleaner.
+
+Normal evolution is:
+
+```text
+schema change
+    ↓
+new migration
+    ↓
+validation from clean database
+```
+
+Migration generation is appropriate only when the physical schema changes.
+
+Refactoring application code or reusable Drizzle helpers does not automatically require a migration.
+
+## Testing
+
+The repository uses four testing layers:
+
+```text
+unit
+integration
+API
+browser E2E
+```
+
+### Unit
+
+```powershell
+pnpm test:unit
+```
+
+No external infrastructure should normally be required.
+
+### PostgreSQL integration
+
+```powershell
+pnpm test:database
+```
+
+Uses real PostgreSQL and the dedicated test database.
+
+### API
+
+```powershell
+pnpm test:api
+```
+
+Exercises the NestJS HTTP/application boundary.
+
+### Integration suite
+
+```powershell
+pnpm test:integration
+```
+
+Runs database and API integration projects after deterministic test-database preparation.
+
+### Default test gate
+
+```powershell
+pnpm test
+```
+
+Runs:
+
+```text
+unit
++
+database integration
++
+API integration
+```
+
+### Browser E2E
+
+Install Chromium once when necessary:
+
+```powershell
+pnpm test:e2e:install
+```
+
+Run:
+
+```powershell
+pnpm test:e2e
+```
+
+The E2E environment uses isolated Web/API ports and the dedicated test database.
+
+### Everything
+
+```powershell
+pnpm test:all
+```
+
+## Quality commands
+
+Formatting:
+
+```powershell
+pnpm format
+```
+
+Formatting verification:
+
+```powershell
+pnpm format:check
+```
+
+Lint:
+
+```powershell
+pnpm lint
+```
+
+Typecheck:
+
+```powershell
+pnpm typecheck
+```
+
+Production build:
+
+```powershell
+pnpm build
+```
+
+## Complete local validation
+
+The normal full validation sequence is:
+
+```powershell
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm test
+pnpm db:check
+pnpm db:validate
+pnpm test:e2e
+```
+
+During implementation, narrower workspace commands are encouraged for fast feedback.
+
+Before proposing integration, run the checks relevant to the change and record them truthfully in the pull request.
+
+Do not claim a command was executed when it was not.
+
+## Continuous integration
+
+Pull requests to `main` are validated by stable quality gates:
+
+```text
+Build
+Lint
+Typecheck
+Tests
+Database / Migrations
+Browser E2E
+```
+
+Do not weaken:
+
+```text
+lint rules
+type safety
+tests
+migration validation
+security boundaries
+```
+
+merely to make CI green.
+
+Fix the underlying issue.
+
+CI and local development should use the same repository commands rather than separate CI-only implementations.
+
+## Source-of-truth hierarchy
+
+When implementing an issue, use:
+
+```text
+current repository/main
++
+GitHub issue scope
++
+relevant product/domain/architecture documentation
+```
+
+The GitHub issue defines the requested unit of work.
+
+It does not silently override existing product/domain invariants.
+
+If an issue appears to conflict with an accepted invariant or ADR, surface and resolve the conflict rather than silently choosing implementation convenience.
+
+## Workflow
+
+Normal repository work follows:
+
+```text
+Issue
+    ↓
+Branch
+    ↓
+Implementation
+    ↓
+Validation
+    ↓
+Commit
+    ↓
+Push
+    ↓
+Pull Request
+    ↓
+CI / Review
+    ↓
+Merge
+```
+
+Work one issue at a time.
+
+Do not pre-implement later issues merely because their direction is known.
+
+See:
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+for branch, commit, pull-request, migration, ADR, and review conventions.
+
+Coding agents must also follow:
+
+[`AGENTS.md`](AGENTS.md)
 
 ## Domain-first implementation
 
-Before implementing a product capability, start from the business model.
-
-Do not begin with:
+Do not design capabilities primarily as:
 
 ```text
 screen
@@ -483,81 +724,133 @@ screen
 → table
 ```
 
-as the primary design process.
-
 Prefer:
 
 ```text
 business capability
-→ domain concepts and invariants
-→ ownership boundary
-→ persistence needs
-→ application use cases
-→ transport contract
-→ UI
+        ↓
+domain concepts and invariants
+        ↓
+ownership boundary
+        ↓
+persistence needs
+        ↓
+application use cases
+        ↓
+transport contract
+        ↓
+UI
 ```
 
-The exact implementation will vary by capability, but business semantics should remain upstream of infrastructure convenience.
+Infrastructure exists to implement product semantics.
 
-## Documentation
+Product semantics do not exist to fit infrastructure convenience.
 
-Before changing a domain, start from the product vision and then read the relevant material under:
+## Tenant boundary
+
+`Organization` is the primary business tenant boundary.
+
+Organization-owned operations require explicit Organization context.
+
+Tenant isolation is defense in depth and currently includes PostgreSQL RLS conventions and a non-privileged runtime database role.
+
+Do not bypass tenant-scoped persistence with unscoped database access merely for convenience.
+
+Authorization and persistence isolation are separate concerns; both must remain correct.
+
+## Historical facts and corrections
+
+Business records that represent historical facts must not be silently rewritten when a correction should preserve history.
+
+When a domain distinguishes:
 
 ```text
-docs/product/
-docs/domain/
-docs/architecture/
-docs/adr/
+original fact
+correction
+revision
+supersession
+cancellation
 ```
 
-Important architecture decisions should be captured as ADRs when they:
+preserve that semantic distinction.
+
+Do not implement destructive overwrite behavior simply because it is easier to model.
+
+The owning domain documentation defines the applicable correction/history semantics.
+
+## Architecture-changing work
+
+Create or update architecture documentation when a change modifies repository-wide conventions.
+
+Create an ADR when the decision:
 
 ```text
-affect multiple domains
-are expensive to reverse
-constrain future implementation
-resolve meaningful alternatives
-need durable rationale
+affects several domains
+is expensive to reverse
+constrains future implementation
+resolves meaningful alternatives
+requires durable rationale
 ```
 
-Routine implementation choices do not require ADRs.
+Routine implementation details do not need ADRs.
 
-Accepted ADRs should preserve their historical decision.
+## Dependency policy
 
-If architecture later changes materially, create a new ADR and supersede the previous one rather than rewriting history.
+Do not add a dependency merely because it is popular or convenient.
+
+A new dependency should have:
+
+```text
+a concrete responsibility
+a clear owner
+a justified advantage over existing capabilities
+acceptable maintenance/security implications
+```
+
+Prefer the platform already selected by the repository unless the issue genuinely requires a different capability.
 
 ## Repository discipline
 
-Generated or local-only artifacts must not be committed accidentally.
+Before committing:
 
-Examples include:
-
-```text
-node_modules/
-dist/
-.turbo/
-local environment files
-temporary database files
-editor-specific temporary artifacts
-```
-
-Before committing, inspect:
-
-```bash
+```powershell
 git status
 git diff --stat
 git diff
 git diff --check
 ```
 
-A pull request should contain only changes belonging to its issue or explicitly documented prerequisite work.
+Do not commit generated/local artifacts accidentally, including:
 
-Do not pre-implement later milestones merely because their future shape is already known.
+```text
+node_modules/
+dist/
+.next/
+.turbo/
+playwright-report/
+test-results/
+.env
+local database state
+editor temporary files
+```
 
-## Current direction
+Preserve unrelated local changes.
 
-M1 is establishing the engineering platform required for later product work.
+Do not reset, overwrite, or delete another contributor's work merely to simplify your issue.
 
-The objective is not to maximize the amount of infrastructure.
+## Current milestone direction
 
-The objective is to resolve foundational decisions once, make them executable and testable, and then allow future domain milestones to concentrate on business behavior instead of repeatedly reopening repository-wide technical conventions.
+M1 establishes the executable engineering platform.
+
+Its purpose is to resolve foundational conventions before substantial product-domain implementation.
+
+Later milestones should be able to focus increasingly on:
+
+```text
+business behavior
+domain invariants
+application use cases
+product UX
+```
+
+instead of repeatedly reopening repository-wide platform decisions.

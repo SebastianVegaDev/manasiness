@@ -1,0 +1,94 @@
+.group {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.legend {
+    margin-bottom: var(--space-2);
+    color: var(--color-foreground);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.items {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.root {
+    position: relative;
+    display: inline-grid;
+    min-height: var(--touch-target-min);
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-foreground);
+    cursor: pointer;
+}
+
+.root[data-disabled] {
+    color: var(--color-foreground-muted);
+    cursor: not-allowed;
+}
+
+.input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.control {
+    display: grid;
+    width: var(--space-5);
+    height: var(--space-5);
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface);
+}
+
+.control::after {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    content: '';
+    opacity: 0;
+}
+
+.input:checked + .control {
+    border-color: var(--color-primary);
+}
+
+.input:checked + .control::after {
+    opacity: 1;
+}
+
+.input:focus-visible + .control {
+    outline: var(--focus-ring-width) solid var(--color-focus);
+    outline-offset: var(--focus-ring-offset);
+}
+
+.input:disabled + .control {
+    background: var(--color-surface-muted);
+    opacity: 0.65;
+}
+
+.copy {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.description {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+}

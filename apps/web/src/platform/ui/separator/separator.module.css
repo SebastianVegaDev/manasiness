@@ -1,0 +1,15 @@
+.separator {
+    flex: 0 0 auto;
+    background: var(--color-border-subtle);
+}
+
+.horizontal {
+    width: 100%;
+    height: 1px;
+}
+
+.vertical {
+    width: 1px;
+    min-height: var(--touch-target-min);
+    align-self: stretch;
+}

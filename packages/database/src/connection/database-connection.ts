@@ -16,6 +16,10 @@ import {
 
 export interface CreateDatabaseConnectionOptions {
     readonly applicationName?: string;
+
+    readonly onPoolError?: (
+        error: unknown,
+    ) => void;
 }
 
 export function createDatabaseConnection(
@@ -24,11 +28,18 @@ export function createDatabaseConnection(
 ) {
     const pool = new Pool({
         connectionString: config.url,
+
         max: config.pool.maxConnections,
-        idleTimeoutMillis: config.pool.idleTimeoutMs,
+
+        idleTimeoutMillis:
+            config.pool.idleTimeoutMs,
+
         connectionTimeoutMillis:
-            config.pool.connectionTimeoutMs,
-        ...(options.applicationName === undefined
+            config.pool
+                .connectionTimeoutMs,
+
+        ...(options.applicationName ===
+        undefined
             ? {}
             : {
                   application_name:
@@ -36,16 +47,61 @@ export function createDatabaseConnection(
               }),
     });
 
+    pool.on(
+        'error',
+        (error: unknown) => {
+            try {
+                options.onPoolError?.(
+                    error,
+                );
+            } catch {
+                // Logging/diagnostic callbacks must
+                // never crash the database pool.
+            }
+        },
+    );
+
     const db: DatabaseClient =
         createDatabaseClient(pool);
 
     const transactions: DatabaseTransactionRunner =
-        createDatabaseTransactionRunner(pool);
+        createDatabaseTransactionRunner(
+            pool,
+        );
 
     const tenantScope: TenantDatabaseScope =
-        createTenantDatabaseScope(transactions);
+        createTenantDatabaseScope(
+            transactions,
+        );
 
     let closed = false;
+
+    async function runProbe(
+        timeoutMs: number,
+    ): Promise<void> {
+        assertOpen();
+
+        assertValidProbeTimeout(
+            timeoutMs,
+        );
+
+        const query = pool
+            .query('SELECT 1')
+            .then(() => undefined);
+
+        await settleWithin(
+            query,
+            timeoutMs,
+        );
+    }
+
+    function assertOpen(): void {
+        if (closed) {
+            throw new Error(
+                'Database connection is closed.',
+            );
+        }
+    }
 
     return Object.freeze({
         db,
@@ -53,13 +109,16 @@ export function createDatabaseConnection(
         tenantScope,
 
         async verify(): Promise<void> {
-            if (closed) {
-                throw new Error(
-                    'Cannot verify a closed database connection.',
-                );
-            }
+            await runProbe(
+                config.pool
+                    .connectionTimeoutMs,
+            );
+        },
 
-            await pool.query('SELECT 1');
+        async probeReadiness(
+            timeoutMs: number,
+        ): Promise<void> {
+            await runProbe(timeoutMs);
         },
 
         async close(): Promise<void> {
@@ -77,3 +136,56 @@ export function createDatabaseConnection(
 export type DatabaseConnection = ReturnType<
     typeof createDatabaseConnection
 >;
+
+function assertValidProbeTimeout(
+    timeoutMs: number,
+): void {
+    if (
+        !Number.isSafeInteger(
+            timeoutMs,
+        ) ||
+        timeoutMs <= 0
+    ) {
+        throw new RangeError(
+            'Database probe timeout must be a positive safe integer.',
+        );
+    }
+}
+
+async function settleWithin<T>(
+    operation: Promise<T>,
+    timeoutMs: number,
+): Promise<T> {
+    let timeout:
+        | NodeJS.Timeout
+        | undefined;
+
+    const timeoutPromise =
+        new Promise<never>(
+            (_resolve, reject) => {
+                timeout = setTimeout(
+                    () => {
+                        reject(
+                            new Error(
+                                'Database readiness probe timed out.',
+                            ),
+                        );
+                    },
+                    timeoutMs,
+                );
+
+                timeout.unref();
+            },
+        );
+
+    try {
+        return await Promise.race([
+            operation,
+            timeoutPromise,
+        ]);
+    } finally {
+        if (timeout !== undefined) {
+            clearTimeout(timeout);
+        }
+    }
+}

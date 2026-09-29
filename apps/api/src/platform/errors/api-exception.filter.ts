@@ -21,6 +21,8 @@ import {
 } from './expected-application-error.js';
 import { TransportValidationException } from './transport-validation.exception.js';
 
+import { toSafeLogError } from '../logging/log-safety.js';
+
 interface MappedApiFailure {
     readonly status: number;
 
@@ -67,17 +69,17 @@ export class ApiExceptionFilter
     private logUnexpectedFailure(
         exception: unknown,
     ): void {
-        if (exception instanceof Error) {
-            this.logger.error(
-                'Unexpected API request failure.',
-                exception.stack,
-            );
-
-            return;
-        }
-
         this.logger.error(
-            'Unexpected non-Error API request failure.',
+            {
+                event:
+                    'api.unexpected_request_failure',
+
+                error:
+                    toSafeLogError(
+                        exception,
+                    ),
+            },
+            'Unexpected API request failure.',
         );
     }
 }
@@ -201,8 +203,8 @@ function mapExpectedApplicationKind(
 function mapHttpStatus(
     status: number,
 ): MappedApiFailure {
-    switch (status as HttpStatus) {
-        case HttpStatus.BAD_REQUEST:
+    switch (status) {
+        case 400:
             return expectedHttpFailure(
                 status,
                 'invalid_input',
@@ -210,7 +212,7 @@ function mapHttpStatus(
                 'Request validation failed.',
             );
 
-        case HttpStatus.UNAUTHORIZED:
+        case 401:
             return expectedHttpFailure(
                 status,
                 'unauthenticated',
@@ -218,7 +220,7 @@ function mapHttpStatus(
                 'Authentication is required.',
             );
 
-        case HttpStatus.FORBIDDEN:
+        case 403:
             return expectedHttpFailure(
                 status,
                 'unauthorized',
@@ -226,7 +228,7 @@ function mapHttpStatus(
                 'You are not allowed to perform this operation.',
             );
 
-        case HttpStatus.NOT_FOUND:
+        case 404:
             return expectedHttpFailure(
                 status,
                 'not_found',
@@ -234,7 +236,7 @@ function mapHttpStatus(
                 'The requested resource was not found.',
             );
 
-        case HttpStatus.CONFLICT:
+        case 409:
             return expectedHttpFailure(
                 status,
                 'conflict',
@@ -242,7 +244,7 @@ function mapHttpStatus(
                 'The request conflicts with the current resource state.',
             );
 
-        case HttpStatus.PAYLOAD_TOO_LARGE:
+        case 413:
             return expectedHttpFailure(
                 status,
                 'invalid_input',
@@ -250,7 +252,7 @@ function mapHttpStatus(
                 'The request payload is too large.',
             );
 
-        case HttpStatus.UNPROCESSABLE_ENTITY:
+        case 422:
             return expectedHttpFailure(
                 status,
                 'business_rejection',
@@ -258,7 +260,7 @@ function mapHttpStatus(
                 'The operation could not be completed.',
             );
 
-        case HttpStatus.TOO_MANY_REQUESTS:
+        case 429:
             return expectedHttpFailure(
                 status,
                 'rate_limited',

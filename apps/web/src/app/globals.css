@@ -1,0 +1,99 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-width: 20rem;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-family-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+input,
+textarea,
+select,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+    margin-block-start: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--color-foreground);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+}
+
+a {
+    color: var(--color-link);
+    text-underline-offset: 0.2em;
+}
+
+code,
+kbd,
+samp,
+pre {
+    font-family: var(--font-family-mono);
+}
+
+[data-numeric='tabular'] {
+    font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+    outline: var(--focus-ring-width) solid var(--color-focus);
+    outline-offset: var(--focus-ring-offset);
+}
+
+::selection {
+    background: var(--color-selection);
+    color: var(--color-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

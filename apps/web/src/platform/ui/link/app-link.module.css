@@ -1,0 +1,25 @@
+.link {
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    text-underline-offset: 0.2em;
+}
+
+.defaultTone {
+    color: var(--color-link);
+}
+
+.mutedTone {
+    color: var(--color-foreground-muted);
+}
+
+.alwaysUnderline {
+    text-decoration: underline;
+}
+
+.hoverUnderline {
+    text-decoration: none;
+}
+
+.hoverUnderline:hover {
+    text-decoration: underline;
+}

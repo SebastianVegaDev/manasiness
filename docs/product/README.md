@@ -11,6 +11,7 @@ Use the smallest document set relevant to the work.
 | [`product-vision.md`](product-vision.md) | V1 product direction, target users, capability boundary, product principles, and non-goals. |
 | [`product-experience.md`](product-experience.md) | M2 product-experience principles, V1 information architecture, navigation model, route model, URL-state expectations, responsive posture, and shell handoff seams. |
 | [`visual-foundation.md`](visual-foundation.md) | M2 visual identity, semantic design tokens, typography, theme behavior, styling rules, and brand-asset guidance. |
+| [`ui-primitives.md`](ui-primitives.md) | M2 reusable UI primitive ownership, API conventions, accessibility behavior, native/headless dependency boundary, and testing expectations. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -35,6 +36,15 @@ Read [`visual-foundation.md`](visual-foundation.md) before changing:
 - theme behavior;
 - focus/motion/layout visual primitives;
 - styling ownership or token-consumption rules.
+
+Read [`ui-primitives.md`](ui-primitives.md) before:
+
+- adding a reusable primitive;
+- changing shared button/field/choice-control APIs;
+- introducing menu/dialog/popover behavior;
+- adding a headless UI dependency;
+- changing shared disabled/focus/accessibility behavior;
+- moving a feature component into `platform/ui`.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

@@ -10,7 +10,8 @@ Examples include:
 - browser/runtime adapters;
 - framework integration boundaries;
 - application-level styling tokens;
-- theme initialization.
+- theme initialization;
+- reusable domain-neutral UI primitives.
 
 Platform code must not become a generic location for business behavior.
 
@@ -29,6 +30,8 @@ import 'server-only';
 ```
 
 for modules that must never enter a Client Component dependency graph.
+
+Interactive UI code should establish the smallest possible Client Component boundary. A menu or dialog requiring browser state must not force an entire route or shell into the client module graph.
 
 ## Runtime configuration
 
@@ -74,11 +77,11 @@ Application-level semantic visual tokens live under:
 platform/styling/
 ```
 
-This boundary owns product-wide CSS custom properties such as semantic colors, spacing, radii, elevation, typography scales, focus values, motion values, content widths, and stacking levels.
+This boundary owns product-wide CSS custom properties such as semantic colors, interaction-state colors, spacing, radii, elevation, typography scales, focus values, motion values, content widths, and stacking levels.
 
 It does not own feature-specific layout or business presentation semantics.
 
-Feature and later primitive CSS should consume these tokens instead of creating independent palettes or spacing scales.
+Feature and primitive CSS should consume these tokens instead of creating independent palettes or spacing scales.
 
 ## Theme initialization
 
@@ -101,6 +104,34 @@ Product visual guidance lives in:
 ```text
 docs/product/visual-foundation.md
 ```
+
+## Reusable UI primitives
+
+Domain-neutral product UI primitives live under:
+
+```text
+platform/ui/
+```
+
+This boundary owns shared interaction semantics such as buttons, fields, choice controls, menus, dialogs, status badges, separators, and loading skeletons.
+
+It does not own:
+
+- business components;
+- API calls;
+- domain rules;
+- feature-specific status vocabulary;
+- form orchestration;
+- application-shell composition.
+
+The primitive contract is documented in:
+
+```text
+docs/product/ui-primitives.md
+docs/adr/0015-native-first-web-ui-primitives.md
+```
+
+Do not create generic `components`, `common`, or `utils` folders as an alternative ownership model.
 
 ## Data access
 

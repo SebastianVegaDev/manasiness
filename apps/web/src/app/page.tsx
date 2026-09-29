@@ -2,6 +2,7 @@ import Image from 'next/image';
 
 import { ApiReadinessStatus } from '../platform/health/api-readiness-status';
 import styles from './page.module.css';
+import { PrimitiveDiagnostics } from './primitive-diagnostics';
 
 export default function DevelopmentLandingPage() {
     return (
@@ -25,6 +26,8 @@ export default function DevelopmentLandingPage() {
 
                     <p className={styles['description']}>Web application foundation is running.</p>
                 </div>
+
+                <PrimitiveDiagnostics />
 
                 <div className={styles['health']}>
                     <ApiReadinessStatus />

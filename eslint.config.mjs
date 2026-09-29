@@ -21,6 +21,21 @@ export default [
         tsconfigRootDir: repositoryRoot,
     }),
 
+    {
+        name: 'manasiness/root-typescript-project',
+        files: [
+            'vitest.config.ts',
+            'playwright.config.ts',
+            'tests/**/*.ts',
+        ],
+        languageOptions: {
+            parserOptions: {
+                projectService: false,
+                project: './tsconfig.tools.json',
+            },
+        },
+    },
+
     ...createNodeConfig(nodeFiles),
 
     ...createReactConfig(browserFiles),

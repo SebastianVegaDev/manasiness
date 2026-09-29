@@ -12,10 +12,28 @@
         "build": "turbo run build",
         "lint": "pnpm lint:root && turbo run lint",
         "lint:root": "eslint \"*.{js,mjs,cjs}\"",
-        "typecheck": "turbo run typecheck",
-        "test": "turbo run test",
+        "typecheck": "pnpm typecheck:tools && turbo run typecheck",
+        "typecheck:tools": "tsc -p tsconfig.tools.json --noEmit",
+
+        "test": "pnpm test:unit && pnpm test:integration",
+        "test:unit": "vitest run --project unit",
+        "test:web": "vitest run --project unit apps/web/test/unit",
+
+        "test:integration:prepare": "pnpm db:up && pnpm db:reset:test",
+        "test:database": "pnpm test:integration:prepare && vitest run --project integration",
+        "test:api": "pnpm test:integration:prepare && vitest run --project api",
+        "test:integration": "pnpm test:integration:prepare && vitest run --project integration --project api",
+
+        "test:e2e:prepare": "pnpm db:up && pnpm db:reset:test",
+        "test:e2e": "pnpm test:e2e:prepare && playwright test",
+        "test:e2e:install": "playwright install chromium",
+
+        "test:all": "pnpm test && pnpm test:e2e",
+        "test:watch": "vitest",
+
         "format": "prettier --write .",
         "format:check": "prettier --check .",
+
         "db:up": "docker compose up -d --wait postgres",
         "db:stop": "docker compose stop postgres",
         "db:logs": "docker compose logs -f postgres",
@@ -28,9 +46,11 @@
     },
     "devDependencies": {
         "@manasiness/eslint-config": "workspace:*",
+        "@playwright/test": "1.63.0",
         "eslint": "10.11.0",
         "prettier": "3.9.9",
         "turbo": "2.11.2",
-        "typescript": "6.0.3"
+        "typescript": "6.0.3",
+        "vitest": "5.0.2"
     }
 }

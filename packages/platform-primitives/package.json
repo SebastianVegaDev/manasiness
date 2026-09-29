@@ -19,7 +19,7 @@
         "build": "tsc -p tsconfig.build.json",
         "lint": "eslint . --no-error-on-unmatched-pattern",
         "typecheck": "tsc -p tsconfig.json --noEmit",
-        "test": "tsx --test \"test/**/*.test.ts\""
+        "test": "pnpm -w test:unit -- packages/platform-primitives/test/unit"
     },
     "dependencies": {
         "uuid": "14.0.2",
@@ -30,7 +30,6 @@
         "@manasiness/typescript-config": "workspace:*",
         "@types/node": "24.13.6",
         "eslint": "10.11.0",
-        "tsx": "4.23.15",
         "typescript": "6.0.3"
     }
 }

@@ -43,11 +43,6 @@
                 ".env",
                 ".env.*"
             ]
-        },
-        "test": {
-            "dependsOn": [
-                "^test"
-            ]
         }
     }
 }

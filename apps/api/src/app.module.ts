@@ -3,6 +3,7 @@ import {
     type DynamicModule,
 } from '@nestjs/common';
 
+import { ContractsPlatformModule } from './platform/contracts/contracts-platform.module.js';
 import {
     DatabaseModule,
     type DatabaseModuleOptions,
@@ -20,11 +21,15 @@ export class AppModule {
     ): DynamicModule {
         return {
             module: AppModule,
+
             imports: [
                 DatabaseModule.register(
                     options.database,
                 ),
+
                 HealthModule,
+
+                ContractsPlatformModule,
             ],
         };
     }

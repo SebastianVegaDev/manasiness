@@ -38,7 +38,10 @@ const httpOriginSchema = z
                 'must be an HTTP(S) origin without credentials, path, query, or fragment',
         },
     )
-    .transform((value) => new URL(value).origin);
+    .transform(
+        (value) =>
+            new URL(value).origin,
+    );
 
 const corsOriginsSchema = z.preprocess(
     (value) => {
@@ -50,103 +53,202 @@ const corsOriginsSchema = z.preprocess(
             return value;
         }
 
-        const trimmedValue = value.trim();
+        const trimmedValue =
+            value.trim();
 
-        if (trimmedValue.length === 0) {
+        if (
+            trimmedValue.length === 0
+        ) {
             return [];
         }
 
         return trimmedValue
             .split(',')
-            .map((origin) => origin.trim());
+            .map((origin) =>
+                origin.trim(),
+            );
     },
     z.array(httpOriginSchema),
 );
 
-const apiEnvironmentSchema = z.object({
-    APP_ENV: runtimeEnvironmentSchema,
+const environmentBooleanSchema =
+    z.preprocess(
+        (value) => {
+            if (value === undefined) {
+                return false;
+            }
 
-    API_SERVICE_NAME: z
-        .string()
-        .trim()
-        .min(1)
-        .default('manasiness-api'),
+            if (
+                typeof value !==
+                'string'
+            ) {
+                return value;
+            }
 
-    API_LOG_LEVEL: runtimeLogLevelSchema.default('info'),
+            const normalized =
+                value
+                    .trim()
+                    .toLowerCase();
 
-    API_HOST: z
-        .string()
-        .trim()
-        .min(1)
-        .default('127.0.0.1'),
+            if (
+                normalized === 'true'
+            ) {
+                return true;
+            }
 
-    API_PORT: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(65_535)
-        .default(3001),
+            if (
+                normalized === 'false'
+            ) {
+                return false;
+            }
 
-    API_BODY_LIMIT_BYTES: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(Number.MAX_SAFE_INTEGER)
-        .default(1_048_576),
+            return value;
+        },
+        z.boolean(),
+    );
 
-    API_CORS_ORIGINS: corsOriginsSchema,
-});
+const apiEnvironmentSchema =
+    z.object({
+        APP_ENV:
+            runtimeEnvironmentSchema,
 
-export type RuntimeEnvironment = z.infer<
-    typeof runtimeEnvironmentSchema
->;
+        API_SERVICE_NAME: z
+            .string()
+            .trim()
+            .min(1)
+            .default(
+                'manasiness-api',
+            ),
 
-export type RuntimeLogLevel = z.infer<
-    typeof runtimeLogLevelSchema
->;
+        API_LOG_LEVEL:
+            runtimeLogLevelSchema.default(
+                'info',
+            ),
+
+        API_HOST: z
+            .string()
+            .trim()
+            .min(1)
+            .default(
+                '127.0.0.1',
+            ),
+
+        API_PORT: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(65_535)
+            .default(3001),
+
+        API_BODY_LIMIT_BYTES:
+            z.coerce
+                .number()
+                .int()
+                .min(1)
+                .max(
+                    Number.MAX_SAFE_INTEGER,
+                )
+                .default(
+                    1_048_576,
+                ),
+
+        API_CORS_ORIGINS:
+            corsOriginsSchema,
+
+        API_DOCS_ENABLED:
+            environmentBooleanSchema,
+    });
+
+export type RuntimeEnvironment =
+    z.infer<
+        typeof runtimeEnvironmentSchema
+    >;
+
+export type RuntimeLogLevel =
+    z.infer<
+        typeof runtimeLogLevelSchema
+    >;
 
 export interface ApiServiceRuntimeConfig {
     readonly name: string;
-    readonly logLevel: RuntimeLogLevel;
+
+    readonly logLevel:
+        RuntimeLogLevel;
 }
 
 export interface ApiHttpRuntimeConfig {
     readonly host: string;
+
     readonly port: number;
+
     readonly bodyLimitBytes: number;
-    readonly corsOrigins: readonly string[];
+
+    readonly corsOrigins:
+        readonly string[];
+}
+
+export interface ApiDocumentationRuntimeConfig {
+    readonly enabled: boolean;
 }
 
 export interface ApiRuntimeConfig {
-    readonly environment: RuntimeEnvironment;
-    readonly service: ApiServiceRuntimeConfig;
-    readonly http: ApiHttpRuntimeConfig;
+    readonly environment:
+        RuntimeEnvironment;
+
+    readonly service:
+        ApiServiceRuntimeConfig;
+
+    readonly http:
+        ApiHttpRuntimeConfig;
+
+    readonly documentation:
+        ApiDocumentationRuntimeConfig;
 }
 
 export function loadApiRuntimeConfig(
-    environment: EnvironmentSource = process.env,
+    environment: EnvironmentSource =
+        process.env,
 ): ApiRuntimeConfig {
-    const result = apiEnvironmentSchema.safeParse({
-        APP_ENV: environment['APP_ENV'],
+    const result =
+        apiEnvironmentSchema.safeParse({
+            APP_ENV:
+                environment['APP_ENV'],
 
-        API_SERVICE_NAME:
-            environment['API_SERVICE_NAME'],
+            API_SERVICE_NAME:
+                environment[
+                    'API_SERVICE_NAME'
+                ],
 
-        API_LOG_LEVEL:
-            environment['API_LOG_LEVEL'],
+            API_LOG_LEVEL:
+                environment[
+                    'API_LOG_LEVEL'
+                ],
 
-        API_HOST:
-            environment['API_HOST'],
+            API_HOST:
+                environment[
+                    'API_HOST'
+                ],
 
-        API_PORT:
-            environment['API_PORT'],
+            API_PORT:
+                environment[
+                    'API_PORT'
+                ],
 
-        API_BODY_LIMIT_BYTES:
-            environment['API_BODY_LIMIT_BYTES'],
+            API_BODY_LIMIT_BYTES:
+                environment[
+                    'API_BODY_LIMIT_BYTES'
+                ],
 
-        API_CORS_ORIGINS:
-            environment['API_CORS_ORIGINS'],
-    });
+            API_CORS_ORIGINS:
+                environment[
+                    'API_CORS_ORIGINS'
+                ],
+
+            API_DOCS_ENABLED:
+                environment[
+                    'API_DOCS_ENABLED'
+                ],
+        });
 
     if (!result.success) {
         throw createRuntimeConfigurationError(
@@ -155,46 +257,94 @@ export function loadApiRuntimeConfig(
         );
     }
 
-    const corsOrigins = Object.freeze([
-        ...new Set(result.data.API_CORS_ORIGINS),
-    ]);
+    const corsOrigins =
+        Object.freeze([
+            ...new Set(
+                result.data
+                    .API_CORS_ORIGINS,
+            ),
+        ]);
 
-    const service = Object.freeze<ApiServiceRuntimeConfig>({
-        name: result.data.API_SERVICE_NAME,
-        logLevel: result.data.API_LOG_LEVEL,
-    });
+    const service =
+        Object.freeze<ApiServiceRuntimeConfig>(
+            {
+                name: result.data
+                    .API_SERVICE_NAME,
 
-    const http = Object.freeze<ApiHttpRuntimeConfig>({
-        host: result.data.API_HOST,
-        port: result.data.API_PORT,
-        bodyLimitBytes:
-            result.data.API_BODY_LIMIT_BYTES,
-        corsOrigins,
-    });
+                logLevel:
+                    result.data
+                        .API_LOG_LEVEL,
+            },
+        );
 
-    return Object.freeze<ApiRuntimeConfig>({
-        environment: result.data.APP_ENV,
-        service,
-        http,
-    });
+    const http =
+        Object.freeze<ApiHttpRuntimeConfig>(
+            {
+                host: result.data
+                    .API_HOST,
+
+                port: result.data
+                    .API_PORT,
+
+                bodyLimitBytes:
+                    result.data
+                        .API_BODY_LIMIT_BYTES,
+
+                corsOrigins,
+            },
+        );
+
+    const documentation =
+        Object.freeze<ApiDocumentationRuntimeConfig>(
+            {
+                enabled:
+                    result.data
+                        .API_DOCS_ENABLED,
+            },
+        );
+
+    return Object.freeze<ApiRuntimeConfig>(
+        {
+            environment:
+                result.data.APP_ENV,
+
+            service,
+
+            http,
+
+            documentation,
+        },
+    );
 }
 
 function createRuntimeConfigurationError(
     scope: string,
     error: z.ZodError,
 ): Error {
-    const issues = error.issues
-        .map((issue) => {
-            const path =
-                issue.path.length === 0
-                    ? 'environment'
-                    : issue.path
-                          .map((segment) => String(segment))
-                          .join('.');
+    const issues =
+        error.issues
+            .map((issue) => {
+                const path =
+                    issue.path
+                        .length ===
+                    0
+                        ? 'environment'
+                        : issue.path
+                              .map(
+                                  (
+                                      segment,
+                                  ) =>
+                                      String(
+                                          segment,
+                                      ),
+                              )
+                              .join(
+                                  '.',
+                              );
 
-            return `- ${path}: ${issue.message}`;
-        })
-        .join('\n');
+                return `- ${path}: ${issue.message}`;
+            })
+            .join('\n');
 
     return new Error(
         `Invalid ${scope} runtime configuration:\n${issues}`,

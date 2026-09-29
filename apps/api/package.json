@@ -4,20 +4,23 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "predev": "pnpm --filter @manasiness/database build",
+        "predev": "pnpm --filter @manasiness/contracts build && pnpm --filter @manasiness/database build",
         "dev": "nest start --watch",
         "build": "nest build",
-        "prestart": "pnpm --filter @manasiness/database build",
+        "prestart": "pnpm --filter @manasiness/contracts build && pnpm --filter @manasiness/database build",
         "start": "node dist/main.js",
         "lint": "eslint . --no-error-on-unmatched-pattern",
         "typecheck": "tsc -p tsconfig.json --noEmit",
-        "test": "node --test"
+        "pretest": "pnpm --filter @manasiness/contracts build",
+        "test": "tsx --test \"test/**/*.test.ts\""
     },
     "dependencies": {
+        "@manasiness/contracts": "workspace:*",
         "@manasiness/database": "workspace:*",
         "@nestjs/common": "12.1.0",
         "@nestjs/core": "12.1.0",
         "@nestjs/platform-express": "12.1.0",
+        "@nestjs/swagger": "12.0.2",
         "helmet": "8.3.0",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.2",
@@ -29,6 +32,7 @@
         "@nestjs/cli": "12.0.7",
         "@types/node": "24.13.6",
         "eslint": "10.11.0",
+        "tsx": "4.23.15",
         "typescript": "6.0.3"
     }
 }

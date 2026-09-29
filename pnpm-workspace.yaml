@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+    - 'apps/*'
+    - 'packages/*'
 allowBuilds:
-  '@scarf/scarf': set this to true or false
-  esbuild: false
+    '@scarf/scarf': false
+    esbuild: false

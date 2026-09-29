@@ -6,6 +6,9 @@ import type { ReactNode } from 'react';
 import '../platform/styling/tokens.css';
 import './globals.css';
 
+import { LocalizationProvider } from '../platform/i18n/localization-provider';
+import { getPlatformMessages } from '../platform/i18n/messages';
+import { getRequestLocale, getTranslations } from '../platform/i18n/server';
 import { QueryProvider } from '../platform/query/query-provider';
 import { THEME_BOOTSTRAP_SCRIPT } from '../platform/theme/theme-bootstrap';
 
@@ -15,23 +18,32 @@ const geist = Geist({
     variable: '--font-geist-sans',
 });
 
-export const metadata: Metadata = {
-    title: 'Manasiness',
-    description: 'Manasiness web application.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations('metadata');
+
+    return {
+        title: 'Manasiness',
+        description: t('description'),
+    };
+}
 
 interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+    const locale = await getRequestLocale();
+    const messages = getPlatformMessages(locale);
+
     return (
-        <html className={geist.variable} suppressHydrationWarning>
+        <html lang={locale} className={geist.variable} suppressHydrationWarning>
             <body>
                 <Script id="manasiness-theme-bootstrap" strategy="beforeInteractive">
                     {THEME_BOOTSTRAP_SCRIPT}
                 </Script>
-                <QueryProvider>{children}</QueryProvider>
+                <LocalizationProvider locale={locale} messages={messages}>
+                    <QueryProvider>{children}</QueryProvider>
+                </LocalizationProvider>
             </body>
         </html>
     );

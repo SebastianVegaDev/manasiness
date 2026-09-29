@@ -78,6 +78,24 @@ Do not introduce literal feature palettes or a second theme source.
 
 `className` is available for composition/layout escape hatches. Repeated visual overrides indicate that the primitive or token contract should be improved instead.
 
+## Product copy
+
+Primitives own interaction semantics, not product wording.
+
+Accessible labels/help text whose wording is visible or announced to users should be supplied by the composing shell/feature when the wording is not structurally intrinsic.
+
+For example, Dialog requires an explicit `closeLabel` rather than silently injecting an English accessible name.
+
+Do not add new English default copy to a reusable primitive merely to make a prop optional.
+
+See:
+
+```text
+docs/product/localization-and-copy.md
+```
+
+for the localization/copy ownership contract.
+
 ## Client boundaries
 
 Keep Client Components narrow.

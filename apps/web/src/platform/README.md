@@ -11,6 +11,7 @@ Examples include:
 - framework integration boundaries;
 - application-level styling tokens;
 - theme initialization;
+- localization and presentation formatting;
 - reusable domain-neutral UI primitives.
 
 Platform code must not become a generic location for business behavior.
@@ -105,6 +106,39 @@ Product visual guidance lives in:
 docs/product/visual-foundation.md
 ```
 
+## Localization and formatting
+
+Presentation-locale infrastructure lives under:
+
+```text
+platform/i18n/
+```
+
+This boundary owns:
+
+- supported UI locale identifiers;
+- request-language negotiation;
+- Server and Client Component translation access;
+- browser-safe message context;
+- standards-based number/date/time presentation formatting.
+
+It does not own:
+
+- Organization currency or timezone selection;
+- tax/accounting localization;
+- authentication preference persistence;
+- business calculations;
+- API error semantics.
+
+Currency and timezone remain explicit inputs supplied by their owning business/application capability.
+
+The localization contract is documented in:
+
+```text
+docs/product/localization-and-copy.md
+docs/adr/0016-web-localization-runtime-boundary.md
+```
+
 ## Reusable UI primitives
 
 Domain-neutral product UI primitives live under:
@@ -122,7 +156,8 @@ It does not own:
 - domain rules;
 - feature-specific status vocabulary;
 - form orchestration;
-- application-shell composition.
+- application-shell composition;
+- product wording that belongs to a consumer.
 
 The primitive contract is documented in:
 

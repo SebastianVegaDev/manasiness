@@ -12,6 +12,7 @@ Use the smallest document set relevant to the work.
 | [`product-experience.md`](product-experience.md) | M2 product-experience principles, V1 information architecture, navigation model, route model, URL-state expectations, responsive posture, and shell handoff seams. |
 | [`visual-foundation.md`](visual-foundation.md) | M2 visual identity, semantic design tokens, typography, theme behavior, styling rules, and brand-asset guidance. |
 | [`ui-primitives.md`](ui-primitives.md) | M2 reusable UI primitive ownership, API conventions, accessibility behavior, native/headless dependency boundary, and testing expectations. |
+| [`localization-and-copy.md`](localization-and-copy.md) | M2 UI-locale resolution, message ownership, presentation-formatting boundaries, and product copy/microcopy conventions. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -45,6 +46,16 @@ Read [`ui-primitives.md`](ui-primitives.md) before:
 - adding a headless UI dependency;
 - changing shared disabled/focus/accessibility behavior;
 - moving a feature component into `platform/ui`.
+
+Read [`localization-and-copy.md`](localization-and-copy.md) before changing:
+
+- supported UI locales or fallback behavior;
+- locale detection or preference precedence;
+- product message ownership/key conventions;
+- translation access in Server or Client Components;
+- user-facing number/date/currency/time formatting;
+- product microcopy conventions;
+- the separation between UI locale and Organization currency/timezone.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

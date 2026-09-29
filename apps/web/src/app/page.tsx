@@ -1,15 +1,18 @@
 import Image from 'next/image';
 
 import { ApiReadinessStatus } from '../platform/health/api-readiness-status';
+import { getTranslations } from '../platform/i18n/server';
 import styles from './page.module.css';
 import { PrimitiveDiagnostics } from './primitive-diagnostics';
 
-export default function DevelopmentLandingPage() {
+export default async function DevelopmentLandingPage() {
+    const t = await getTranslations('landing');
+
     return (
         <main className={styles['page']}>
             <section className={styles['panel']} aria-labelledby="application-title">
                 <div>
-                    <p className={styles['kicker']}>Product foundation</p>
+                    <p className={styles['kicker']}>{t('kicker')}</p>
 
                     <h1 id="application-title" className={styles['wordmark']}>
                         <Image
@@ -24,7 +27,7 @@ export default function DevelopmentLandingPage() {
                         <span>Manasiness</span>
                     </h1>
 
-                    <p className={styles['description']}>Web application foundation is running.</p>
+                    <p className={styles['description']}>{t('description')}</p>
                 </div>
 
                 <PrimitiveDiagnostics />

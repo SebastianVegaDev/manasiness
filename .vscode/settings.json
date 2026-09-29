@@ -1,38 +1,38 @@
 {
-  "files.exclude": {
-    "**/node_modules": true,
-    "**/.pnpm-store": true,
-    "**/.turbo": true,
-    "**/.next": true,
-    "**/next-env.d.ts": true,
-    "**/dist": true,
-    "**/build": true,
-    "**/out": true,
-    "**/coverage": true,
-    "**/.nyc_output": true,
-    "**/.cache": true,
-    "**/.vite": true,
-    "**/.eslintcache": true,
-    "**/*.tsbuildinfo": true
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/.pnpm-store": true,
-    "**/.turbo": true,
-    "**/.next": true,
-    "**/dist": true,
-    "**/build": true,
-    "**/out": true,
-    "**/coverage": true
-  },
-  "files.watcherExclude": {
-    "**/node_modules/**": true,
-    "**/.pnpm-store/**": true,
-    "**/.turbo/**": true,
-    "**/.next/**": true,
-    "**/dist/**": true,
-    "**/build/**": true,
-    "**/out/**": true,
-    "**/coverage/**": true
-  }
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.pnpm-store": true,
+        "**/.turbo": true,
+        "**/.next": true,
+        "**/next-env.d.ts": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/out": true,
+        "**/coverage": true,
+        "**/.nyc_output": true,
+        "**/.cache": true,
+        "**/.vite": true,
+        "**/.eslintcache": true,
+        "**/*.tsbuildinfo": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.pnpm-store": true,
+        "**/.turbo": true,
+        "**/.next": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/out": true,
+        "**/coverage": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/.pnpm-store/**": true,
+        "**/.turbo/**": true,
+        "**/.next/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/out/**": true,
+        "**/coverage/**": true
+    }
 }

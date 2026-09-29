@@ -83,6 +83,9 @@ web_modules/
 .next
 out
 next-env.d.ts
+# Next.js development agent guidance generated in the Web workspace
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
 
 # Nuxt.js build / generate output
 .nuxt

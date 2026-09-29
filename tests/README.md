@@ -174,14 +174,10 @@ It should prove user-observable flows rather than every internal branch.
 Run:
 
 ```powershell
-$env:APP_ENV = 'test'
-$env:WEB_API_ORIGIN = 'http://127.0.0.1:3101'
-$env:NEXT_PUBLIC_API_ORIGIN = 'http://127.0.0.1:3101'
-pnpm build
 pnpm test:e2e
 ```
 
-Playwright starts the built Web and API servers. Rebuild after changing either application.
+Playwright starts isolated Web and API development processes with its own test configuration. The command builds required shared packages and prepares the dedicated test database.
 
 The test stack uses:
 

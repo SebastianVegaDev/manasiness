@@ -3,14 +3,6 @@
     "compilerOptions": {
         "noEmit": true
     },
-    "include": [
-        "src/**/*.ts",
-        "scripts/**/*.ts",
-        "test/**/*.ts",
-        "drizzle.config.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+    "include": ["src/**/*.ts", "scripts/**/*.ts", "test/**/*.ts", "drizzle.config.ts"],
+    "exclude": ["node_modules", "dist"]
 }

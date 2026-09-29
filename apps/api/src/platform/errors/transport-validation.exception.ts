@@ -1,8 +1,5 @@
 export interface TransportValidationIssue {
-    readonly path: readonly (
-        | string
-        | number
-    )[];
+    readonly path: readonly (string | number)[];
 
     readonly message: string;
 }
@@ -10,20 +7,15 @@ export interface TransportValidationIssue {
 export class TransportValidationException extends Error {
     readonly issues: readonly TransportValidationIssue[];
 
-    constructor(
-        issues: readonly TransportValidationIssue[],
-    ) {
+    constructor(issues: readonly TransportValidationIssue[]) {
         super('Request validation failed.');
 
-        this.name =
-            'TransportValidationException';
+        this.name = 'TransportValidationException';
 
         this.issues = Object.freeze(
             issues.map((issue) =>
                 Object.freeze({
-                    path: Object.freeze([
-                        ...issue.path,
-                    ]),
+                    path: Object.freeze([...issue.path]),
                     message: issue.message,
                 }),
             ),
@@ -34,9 +26,7 @@ export class TransportValidationException extends Error {
 interface StandardValidationIssueLike {
     readonly message: string;
 
-    readonly path?:
-        | readonly unknown[]
-        | undefined;
+    readonly path?: readonly unknown[] | undefined;
 }
 
 export function createTransportValidationException(
@@ -50,9 +40,7 @@ export function createTransportValidationException(
     );
 }
 
-function normalizePath(
-    path: readonly unknown[] | undefined,
-): readonly (string | number)[] {
+function normalizePath(path: readonly unknown[] | undefined): readonly (string | number)[] {
     if (path === undefined) {
         return [];
     }
@@ -60,13 +48,8 @@ function normalizePath(
     return path.map(normalizePathSegment);
 }
 
-function normalizePathSegment(
-    segment: unknown,
-): string | number {
-    const value =
-        isPathObject(segment)
-            ? segment.key
-            : segment;
+function normalizePathSegment(segment: unknown): string | number {
+    const value = isPathObject(segment) ? segment.key : segment;
 
     if (typeof value === 'number') {
         return value;
@@ -75,14 +58,8 @@ function normalizePathSegment(
     return String(value);
 }
 
-function isPathObject(
-    value: unknown,
-): value is {
+function isPathObject(value: unknown): value is {
     readonly key: unknown;
 } {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        'key' in value
-    );
+    return typeof value === 'object' && value !== null && 'key' in value;
 }

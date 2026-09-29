@@ -3,14 +3,10 @@ import type { Pool, PoolClient } from 'pg';
 
 type NodePostgresClient = Pool | PoolClient;
 
-export function createDatabaseClient(
-    client: NodePostgresClient,
-) {
+export function createDatabaseClient(client: NodePostgresClient) {
     return drizzle({
         client,
     });
 }
 
-export type DatabaseClient = ReturnType<
-    typeof createDatabaseClient
->;
+export type DatabaseClient = ReturnType<typeof createDatabaseClient>;

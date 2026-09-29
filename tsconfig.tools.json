@@ -3,14 +3,6 @@
     "compilerOptions": {
         "noEmit": true
     },
-    "include": [
-        "vitest.config.ts",
-        "playwright.config.ts",
-        "tests/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "playwright-report",
-        "test-results"
-    ]
+    "include": ["vitest.config.ts", "playwright.config.ts", "tests/**/*.ts"],
+    "exclude": ["node_modules", "playwright-report", "test-results"]
 }

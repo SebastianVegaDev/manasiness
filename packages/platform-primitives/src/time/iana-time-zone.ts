@@ -4,24 +4,17 @@ export type IanaTimeZone = string & {
     readonly [ianaTimeZoneBrand]: true;
 };
 
-export function parseIanaTimeZone(
-    value: string,
-): IanaTimeZone {
-    const normalizedValue =
-        resolveIanaTimeZone(value);
+export function parseIanaTimeZone(value: string): IanaTimeZone {
+    const normalizedValue = resolveIanaTimeZone(value);
 
     if (normalizedValue === undefined) {
-        throw new TypeError(
-            'Expected a valid IANA time zone identifier.',
-        );
+        throw new TypeError('Expected a valid IANA time zone identifier.');
     }
 
     return normalizedValue as IanaTimeZone;
 }
 
-export function isIanaTimeZone(
-    value: unknown,
-): value is IanaTimeZone {
+export function isIanaTimeZone(value: unknown): value is IanaTimeZone {
     if (typeof value !== 'string') {
         return false;
     }
@@ -29,15 +22,11 @@ export function isIanaTimeZone(
     return resolveIanaTimeZone(value) === value;
 }
 
-export function serializeIanaTimeZone(
-    value: IanaTimeZone,
-): string {
+export function serializeIanaTimeZone(value: IanaTimeZone): string {
     return value;
 }
 
-function resolveIanaTimeZone(
-    value: string,
-): string | undefined {
+function resolveIanaTimeZone(value: string): string | undefined {
     const candidate = value.trim();
 
     if (candidate.length === 0) {

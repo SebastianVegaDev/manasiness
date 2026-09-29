@@ -5,21 +5,16 @@ export const postgresConnectionUrlSchema = z
     .trim()
     .min(1)
     .refine(isValidPostgresConnectionUrl, {
-        error:
-            'must be a valid PostgreSQL connection URL with an explicit database name',
+        error: 'must be a valid PostgreSQL connection URL with an explicit database name',
     });
 
-export function getDatabaseName(
-    connectionUrl: string,
-): string {
+export function getDatabaseName(connectionUrl: string): string {
     const url = new URL(connectionUrl);
 
     return url.pathname.slice(1);
 }
 
-function isValidPostgresConnectionUrl(
-    value: string,
-): boolean {
+function isValidPostgresConnectionUrl(value: string): boolean {
     let url: URL;
 
     try {
@@ -28,9 +23,7 @@ function isValidPostgresConnectionUrl(
         return false;
     }
 
-    const isPostgresProtocol =
-        url.protocol === 'postgres:' ||
-        url.protocol === 'postgresql:';
+    const isPostgresProtocol = url.protocol === 'postgres:' || url.protocol === 'postgresql:';
 
     const databaseName = url.pathname.slice(1);
 

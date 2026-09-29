@@ -52,10 +52,7 @@ Durable Manasiness entities use RFC 9562 UUIDv7.
 Create an identifier with:
 
 ```typescript
-import {
-    generateEntityId,
-    type EntityId,
-} from '@manasiness/platform-primitives';
+import { generateEntityId, type EntityId } from '@manasiness/platform-primitives';
 
 const id: EntityId = generateEntityId();
 ```
@@ -63,9 +60,7 @@ const id: EntityId = generateEntityId();
 Parse untrusted textual input with:
 
 ```typescript
-import {
-    parseEntityId,
-} from '@manasiness/platform-primitives';
+import { parseEntityId } from '@manasiness/platform-primitives';
 
 const id = parseEntityId(value);
 ```
@@ -108,21 +103,15 @@ JavaScript `Date` is the canonical runtime representation for an absolute instan
 Parse boundary text with:
 
 ```typescript
-import {
-    parseInstant,
-} from '@manasiness/platform-primitives';
+import { parseInstant } from '@manasiness/platform-primitives';
 
-const occurredAt = parseInstant(
-    '2026-09-28T16:14:10.123-05:00',
-);
+const occurredAt = parseInstant('2026-09-28T16:14:10.123-05:00');
 ```
 
 Serialize with:
 
 ```typescript
-import {
-    serializeInstant,
-} from '@manasiness/platform-primitives';
+import { serializeInstant } from '@manasiness/platform-primitives';
 
 serializeInstant(occurredAt);
 ```
@@ -166,12 +155,9 @@ A calendar date without a time-of-day is represented by `LocalDate`.
 Example:
 
 ```typescript
-import {
-    parseLocalDate,
-} from '@manasiness/platform-primitives';
+import { parseLocalDate } from '@manasiness/platform-primitives';
 
-const businessDate =
-    parseLocalDate('2026-09-28');
+const businessDate = parseLocalDate('2026-09-28');
 ```
 
 Its canonical textual representation is:
@@ -210,12 +196,9 @@ Business timezone is represented explicitly with an IANA timezone identifier.
 Example:
 
 ```typescript
-import {
-    parseIanaTimeZone,
-} from '@manasiness/platform-primitives';
+import { parseIanaTimeZone } from '@manasiness/platform-primitives';
 
-const timeZone =
-    parseIanaTimeZone('America/Lima');
+const timeZone = parseIanaTimeZone('America/Lima');
 ```
 
 Other examples include:
@@ -327,7 +310,7 @@ Where deterministic current time is required for a business use case or test, th
 For example, a future application service may receive:
 
 ```typescript
-now: () => Date
+now: () => Date;
 ```
 
 or an equivalent application-owned abstraction if the use case requires deterministic time.

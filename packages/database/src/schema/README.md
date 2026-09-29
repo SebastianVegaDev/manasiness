@@ -19,13 +19,9 @@ type.
 Declare them through:
 
 ```typescript
-import {
-    entityIdColumn,
-} from '@manasiness/database/schema';
+import { entityIdColumn } from '@manasiness/database/schema';
 
-const id = entityIdColumn('id')
-    .primaryKey()
-    .notNull();
+const id = entityIdColumn('id').primaryKey().notNull();
 ```
 
 Application creation normally generates identifiers before persistence.
@@ -47,12 +43,9 @@ column.
 Declare it through:
 
 ```typescript
-import {
-    tenantOrganizationIdColumn,
-} from '@manasiness/database/schema';
+import { tenantOrganizationIdColumn } from '@manasiness/database/schema';
 
-const organizationId =
-    tenantOrganizationIdColumn();
+const organizationId = tenantOrganizationIdColumn();
 ```
 
 Tenant ownership must not be inferred from:
@@ -134,9 +127,7 @@ manasiness.organization_id
 The canonical expression is exported as:
 
 ```typescript
-import {
-    currentTenantOrganizationIdSql,
-} from '@manasiness/database/schema';
+import { currentTenantOrganizationIdSql } from '@manasiness/database/schema';
 ```
 
 Conceptual policy:
@@ -254,7 +245,7 @@ Do not assume generated SQL provides the complete Manasiness tenant-isolation co
 Persist absolute instants with:
 
 ```typescript
-instantColumn('occurred_at')
+instantColumn('occurred_at');
 ```
 
 which maps to:
@@ -290,7 +281,7 @@ Update behavior must remain explicit.
 Calendar dates without time-of-day use:
 
 ```typescript
-localDateColumn('business_date')
+localDateColumn('business_date');
 ```
 
 which maps to PostgreSQL:
@@ -306,7 +297,7 @@ Do not represent date-only meaning as midnight `timestamptz`.
 Explicit timezone identifiers use:
 
 ```typescript
-ianaTimeZoneColumn('time_zone')
+ianaTimeZoneColumn('time_zone');
 ```
 
 Organization timezone is business configuration.

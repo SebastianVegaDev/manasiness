@@ -12,29 +12,21 @@ const webServerEnvironmentSchema = z.object({
     WEB_API_ORIGIN: httpOriginSchema,
 });
 
-export type WebRuntimeEnvironment = z.infer<
-    typeof runtimeEnvironmentSchema
->;
+export type WebRuntimeEnvironment = z.infer<typeof runtimeEnvironmentSchema>;
 
 export interface WebServerRuntimeConfig {
     readonly environment: WebRuntimeEnvironment;
     readonly apiOrigin: string;
 }
 
-export function parseWebServerEnvironment(
-    environment: EnvironmentSource,
-): WebServerRuntimeConfig {
+export function parseWebServerEnvironment(environment: EnvironmentSource): WebServerRuntimeConfig {
     const result = webServerEnvironmentSchema.safeParse({
         APP_ENV: environment['APP_ENV'],
-        WEB_API_ORIGIN:
-            environment['WEB_API_ORIGIN'],
+        WEB_API_ORIGIN: environment['WEB_API_ORIGIN'],
     });
 
     if (!result.success) {
-        throw createRuntimeConfigurationError(
-            'web server',
-            result.error,
-        );
+        throw createRuntimeConfigurationError('web server', result.error);
     }
 
     return Object.freeze<WebServerRuntimeConfig>({

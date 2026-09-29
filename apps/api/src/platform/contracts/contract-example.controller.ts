@@ -1,12 +1,4 @@
-import {
-    Body,
-    Controller,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Post,
-    Query,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 
 import {
     contractExampleParamsSchema,
@@ -30,10 +22,8 @@ export class ContractExampleController {
     @HttpCode(HttpStatus.OK)
     @ApiContractResponse({
         status: HttpStatus.OK,
-        description:
-            'Validated transport-contract example.',
-        schema:
-            contractExampleResponseSchema,
+        description: 'Validated transport-contract example.',
+        schema: contractExampleResponseSchema,
     })
     @ApiContractErrorResponse(
         HttpStatus.BAD_REQUEST,
@@ -41,20 +31,17 @@ export class ContractExampleController {
     )
     validateContract(
         @Param({
-            schema:
-                contractExampleParamsSchema,
+            schema: contractExampleParamsSchema,
         })
         params: ContractExampleParams,
 
         @Query({
-            schema:
-                contractExampleQuerySchema,
+            schema: contractExampleQuerySchema,
         })
         query: ContractExampleQuery,
 
         @Body({
-            schema:
-                contractExampleRequestSchema,
+            schema: contractExampleRequestSchema,
         })
         body: ContractExampleRequest,
     ): ContractExampleResponse {

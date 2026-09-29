@@ -9,39 +9,26 @@ import {
     type DatabaseEnvironmentSource,
     type DatabaseRuntimeConfig,
 } from '../config/database-runtime-config.js';
-import {
-    getDatabaseName,
-    postgresConnectionUrlSchema,
-} from '../config/database-url.js';
+import { getDatabaseName, postgresConnectionUrlSchema } from '../config/database-url.js';
 import type { DatabaseExecutor } from '../transaction/database-executor.js';
 
-type TestDatabaseVariable =
-    | 'DATABASE_TEST_URL'
-    | 'DATABASE_TEST_RUNTIME_URL';
+type TestDatabaseVariable = 'DATABASE_TEST_URL' | 'DATABASE_TEST_RUNTIME_URL';
 
 export function loadDatabaseTestRuntimeConfig(
     environment: DatabaseEnvironmentSource = process.env,
 ): DatabaseRuntimeConfig {
-    return loadDedicatedTestDatabaseConfig(
-        environment,
-        'DATABASE_TEST_URL',
-    );
+    return loadDedicatedTestDatabaseConfig(environment, 'DATABASE_TEST_URL');
 }
 
 export function loadDatabaseTestApplicationRuntimeConfig(
     environment: DatabaseEnvironmentSource = process.env,
 ): DatabaseRuntimeConfig {
-    return loadDedicatedTestDatabaseConfig(
-        environment,
-        'DATABASE_TEST_RUNTIME_URL',
-    );
+    return loadDedicatedTestDatabaseConfig(environment, 'DATABASE_TEST_RUNTIME_URL');
 }
 
 export async function withDatabaseTestConnection<T>(
     environment: DatabaseEnvironmentSource,
-    operation: (
-        connection: DatabaseConnection,
-    ) => Promise<T>,
+    operation: (connection: DatabaseConnection) => Promise<T>,
 ): Promise<T> {
     return withConfiguredTestConnection(
         loadDatabaseTestRuntimeConfig(environment),
@@ -52,14 +39,10 @@ export async function withDatabaseTestConnection<T>(
 
 export async function withDatabaseTestRuntimeConnection<T>(
     environment: DatabaseEnvironmentSource,
-    operation: (
-        connection: DatabaseConnection,
-    ) => Promise<T>,
+    operation: (connection: DatabaseConnection) => Promise<T>,
 ): Promise<T> {
     return withConfiguredTestConnection(
-        loadDatabaseTestApplicationRuntimeConfig(
-            environment,
-        ),
+        loadDatabaseTestApplicationRuntimeConfig(environment),
         'manasiness-database-integration-test-runtime',
         operation,
     );
@@ -80,12 +63,10 @@ export async function assertTenantTableRlsProtected(
     executor: DatabaseExecutor,
     reference: TenantTableReference,
 ): Promise<void> {
-    const schemaName =
-        reference.schemaName ?? 'public';
+    const schemaName = reference.schemaName ?? 'public';
 
-    const result =
-        await executor.execute<TenantTableSecurityRow>(
-            sql`
+    const result = await executor.execute<TenantTableSecurityRow>(
+        sql`
                 SELECT
                     relation.relrowsecurity
                         AS "rlsEnabled",
@@ -109,14 +90,12 @@ export async function assertTenantTableRlsProtected(
                         ${reference.tableName}
                     AND relation.relkind = 'r'
             `,
-        );
+    );
 
     const state = result.rows[0];
 
     if (state === undefined) {
-        throw new Error(
-            `Tenant table "${schemaName}.${reference.tableName}" does not exist.`,
-        );
+        throw new Error(`Tenant table "${schemaName}.${reference.tableName}" does not exist.`);
     }
 
     if (!state.rlsEnabled) {
@@ -142,10 +121,7 @@ function loadDedicatedTestDatabaseConfig(
     environment: DatabaseEnvironmentSource,
     variableName: TestDatabaseVariable,
 ): DatabaseRuntimeConfig {
-    const result =
-        postgresConnectionUrlSchema.safeParse(
-            environment[variableName],
-        );
+    const result = postgresConnectionUrlSchema.safeParse(environment[variableName]);
 
     if (!result.success) {
         throw new Error(
@@ -155,12 +131,7 @@ function loadDedicatedTestDatabaseConfig(
 
     const databaseName = getDatabaseName(result.data);
 
-    if (
-        databaseName !== 'manasiness_test' &&
-        !databaseName.startsWith(
-            'manasiness_test_',
-        )
-    ) {
+    if (databaseName !== 'manasiness_test' && !databaseName.startsWith('manasiness_test_')) {
         throw new Error(
             `Refusing test database configuration: ${variableName} must target a dedicated Manasiness test database.`,
         );
@@ -168,32 +139,20 @@ function loadDedicatedTestDatabaseConfig(
 
     return loadDatabaseRuntimeConfig({
         DATABASE_URL: result.data,
-        DATABASE_POOL_MAX:
-            environment['DATABASE_POOL_MAX'],
-        DATABASE_IDLE_TIMEOUT_MS:
-            environment[
-                'DATABASE_IDLE_TIMEOUT_MS'
-            ],
-        DATABASE_CONNECTION_TIMEOUT_MS:
-            environment[
-                'DATABASE_CONNECTION_TIMEOUT_MS'
-            ],
+        DATABASE_POOL_MAX: environment['DATABASE_POOL_MAX'],
+        DATABASE_IDLE_TIMEOUT_MS: environment['DATABASE_IDLE_TIMEOUT_MS'],
+        DATABASE_CONNECTION_TIMEOUT_MS: environment['DATABASE_CONNECTION_TIMEOUT_MS'],
     });
 }
 
 async function withConfiguredTestConnection<T>(
     config: DatabaseRuntimeConfig,
     applicationName: string,
-    operation: (
-        connection: DatabaseConnection,
-    ) => Promise<T>,
+    operation: (connection: DatabaseConnection) => Promise<T>,
 ): Promise<T> {
-    const connection = createDatabaseConnection(
-        config,
-        {
-            applicationName,
-        },
-    );
+    const connection = createDatabaseConnection(config, {
+        applicationName,
+    });
 
     try {
         await connection.verify();

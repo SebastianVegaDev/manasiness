@@ -13,11 +13,7 @@ export {
     type IanaTimeZone,
 } from './time/iana-time-zone.js';
 
-export {
-    isValidInstant,
-    parseInstant,
-    serializeInstant,
-} from './time/instant.js';
+export { isValidInstant, parseInstant, serializeInstant } from './time/instant.js';
 
 export {
     isLocalDate,

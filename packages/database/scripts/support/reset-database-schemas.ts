@@ -3,9 +3,7 @@ import { Client } from 'pg';
 const runtimeRole = 'manasiness_app';
 const migrationRole = 'manasiness';
 
-export async function resetDatabaseSchemas(
-    connectionUrl: string,
-): Promise<void> {
+export async function resetDatabaseSchemas(connectionUrl: string): Promise<void> {
     const client = new Client({
         connectionString: connectionUrl,
     });
@@ -15,25 +13,15 @@ export async function resetDatabaseSchemas(
     try {
         await client.query('BEGIN');
 
-        await client.query(
-            'DROP SCHEMA IF EXISTS drizzle CASCADE',
-        );
+        await client.query('DROP SCHEMA IF EXISTS drizzle CASCADE');
 
-        await client.query(
-            'DROP SCHEMA IF EXISTS public CASCADE',
-        );
+        await client.query('DROP SCHEMA IF EXISTS public CASCADE');
 
-        await client.query(
-            `CREATE SCHEMA public AUTHORIZATION ${migrationRole}`,
-        );
+        await client.query(`CREATE SCHEMA public AUTHORIZATION ${migrationRole}`);
 
-        await client.query(
-            'REVOKE CREATE ON SCHEMA public FROM PUBLIC',
-        );
+        await client.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
 
-        await client.query(
-            `GRANT USAGE ON SCHEMA public TO ${runtimeRole}`,
-        );
+        await client.query(`GRANT USAGE ON SCHEMA public TO ${runtimeRole}`);
 
         await client.query(`
             ALTER DEFAULT PRIVILEGES
@@ -46,9 +34,7 @@ export async function resetDatabaseSchemas(
 
         await client.query('COMMIT');
     } catch (error: unknown) {
-        await client
-            .query('ROLLBACK')
-            .catch(() => undefined);
+        await client.query('ROLLBACK').catch(() => undefined);
 
         throw error;
     } finally {

@@ -9,20 +9,14 @@ export interface TenantPersistenceContext {
     readonly organizationId: EntityId;
 }
 
-export interface TenantDatabaseExecutionContext
-    extends TenantPersistenceContext {
+export interface TenantDatabaseExecutionContext extends TenantPersistenceContext {
     readonly executor: DatabaseExecutor;
 }
 
-export type TenantDatabaseOperation<T> = (
-    context: TenantDatabaseExecutionContext,
-) => Promise<T>;
+export type TenantDatabaseOperation<T> = (context: TenantDatabaseExecutionContext) => Promise<T>;
 
 export interface TenantDatabaseScope {
-    run<T>(
-        tenant: TenantPersistenceContext,
-        operation: TenantDatabaseOperation<T>,
-    ): Promise<T>;
+    run<T>(tenant: TenantPersistenceContext, operation: TenantDatabaseOperation<T>): Promise<T>;
 }
 
 export function createTenantDatabaseScope(
@@ -33,9 +27,8 @@ export function createTenantDatabaseScope(
             tenant: TenantPersistenceContext,
             operation: TenantDatabaseOperation<T>,
         ): Promise<T> {
-            return transactionRunner.run(
-                async ({ executor }): Promise<T> => {
-                    await executor.execute(sql`
+            return transactionRunner.run(async ({ executor }): Promise<T> => {
+                await executor.execute(sql`
                         SELECT set_config(
                             ${TENANT_ORGANIZATION_SETTING_NAME},
                             ${tenant.organizationId},
@@ -43,16 +36,13 @@ export function createTenantDatabaseScope(
                         )
                     `);
 
-                    const context =
-                        Object.freeze<TenantDatabaseExecutionContext>({
-                            organizationId:
-                                tenant.organizationId,
-                            executor,
-                        });
+                const context = Object.freeze<TenantDatabaseExecutionContext>({
+                    organizationId: tenant.organizationId,
+                    executor,
+                });
 
-                    return operation(context);
-                },
-            );
+                return operation(context);
+            });
         },
     });
 }

@@ -32,115 +32,73 @@ interface MappedApiFailure {
 }
 
 @Catch()
-export class ApiExceptionFilter
-    implements ExceptionFilter
-{
-    private readonly logger =
-        new Logger(ApiExceptionFilter.name);
+export class ApiExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(ApiExceptionFilter.name);
 
-    constructor(
-        private readonly httpAdapterHost: HttpAdapterHost,
-    ) {}
+    constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
-    catch(
-        exception: unknown,
-        host: ArgumentsHost,
-    ): void {
-        const mapped =
-            mapExceptionToApiFailure(exception);
+    catch(exception: unknown, host: ArgumentsHost): void {
+        const mapped = mapExceptionToApiFailure(exception);
 
         if (mapped.unexpected) {
-            this.logUnexpectedFailure(
-                exception,
-            );
+            this.logUnexpectedFailure(exception);
         }
 
-        const response = host
-            .switchToHttp()
-            .getResponse<unknown>();
+        const response = host.switchToHttp().getResponse<unknown>();
 
-        this.httpAdapterHost.httpAdapter.reply(
-            response,
-            mapped.body,
-            mapped.status,
-        );
+        this.httpAdapterHost.httpAdapter.reply(response, mapped.body, mapped.status);
     }
 
-    private logUnexpectedFailure(
-        exception: unknown,
-    ): void {
+    private logUnexpectedFailure(exception: unknown): void {
         this.logger.error(
             {
-                event:
-                    'api.unexpected_request_failure',
+                event: 'api.unexpected_request_failure',
 
-                error:
-                    toSafeLogError(
-                        exception,
-                    ),
+                error: toSafeLogError(exception),
             },
             'Unexpected API request failure.',
         );
     }
 }
 
-function mapExceptionToApiFailure(
-    exception: unknown,
-): MappedApiFailure {
-    if (
-        exception instanceof
-        TransportValidationException
-    ) {
+function mapExceptionToApiFailure(exception: unknown): MappedApiFailure {
+    if (exception instanceof TransportValidationException) {
         return {
             status: HttpStatus.BAD_REQUEST,
             body: createErrorResponse({
                 type: 'invalid_input',
                 code: API_ERROR_CODES.INVALID_INPUT,
-                message:
-                    'Request validation failed.',
-                issues: exception.issues.map(
-                    (issue) => ({
-                        path: [...issue.path],
-                        message: issue.message,
-                    }),
-                ),
+                message: 'Request validation failed.',
+                issues: exception.issues.map((issue) => ({
+                    path: [...issue.path],
+                    message: issue.message,
+                })),
             }),
             unexpected: false,
         };
     }
 
-    if (
-        exception instanceof
-        ExpectedApplicationError
-    ) {
-        const codeResult =
-            apiErrorCodeSchema.safeParse(
-                exception.code,
-            );
+    if (exception instanceof ExpectedApplicationError) {
+        const codeResult = apiErrorCodeSchema.safeParse(exception.code);
 
         if (!codeResult.success) {
             return createInternalFailure();
         }
 
-        const mapping =
-            mapExpectedApplicationKind(
-                exception.kind,
-            );
+        const mapping = mapExpectedApplicationKind(exception.kind);
 
         return {
             status: mapping.status,
             body: createErrorResponse({
                 type: mapping.type,
                 code: codeResult.data,
-                message:
-                    exception.publicMessage,
+                message: exception.publicMessage,
             }),
             unexpected: false,
         };
     }
 
-    const httpStatus =
-        readHttpStatus(exception);
+    const httpStatus = readHttpStatus(exception);
 
     if (httpStatus !== undefined) {
         return mapHttpStatus(httpStatus);
@@ -149,60 +107,50 @@ function mapExceptionToApiFailure(
     return createInternalFailure();
 }
 
-function mapExpectedApplicationKind(
-    kind: ExpectedApplicationErrorKind,
-): {
+function mapExpectedApplicationKind(kind: ExpectedApplicationErrorKind): {
     readonly status: number;
     readonly type: ApiErrorType;
 } {
     switch (kind) {
         case 'unauthenticated':
             return {
-                status:
-                    HttpStatus.UNAUTHORIZED,
+                status: HttpStatus.UNAUTHORIZED,
                 type: 'unauthenticated',
             };
 
         case 'unauthorized':
             return {
-                status:
-                    HttpStatus.FORBIDDEN,
+                status: HttpStatus.FORBIDDEN,
                 type: 'unauthorized',
             };
 
         case 'not_found':
             return {
-                status:
-                    HttpStatus.NOT_FOUND,
+                status: HttpStatus.NOT_FOUND,
                 type: 'not_found',
             };
 
         case 'conflict':
             return {
-                status:
-                    HttpStatus.CONFLICT,
+                status: HttpStatus.CONFLICT,
                 type: 'conflict',
             };
 
         case 'business_rejection':
             return {
-                status:
-                    HttpStatus.UNPROCESSABLE_ENTITY,
+                status: HttpStatus.UNPROCESSABLE_ENTITY,
                 type: 'business_rejection',
             };
 
         case 'rate_limited':
             return {
-                status:
-                    HttpStatus.TOO_MANY_REQUESTS,
+                status: HttpStatus.TOO_MANY_REQUESTS,
                 type: 'rate_limited',
             };
     }
 }
 
-function mapHttpStatus(
-    status: number,
-): MappedApiFailure {
+function mapHttpStatus(status: number): MappedApiFailure {
     switch (status) {
         case 400:
             return expectedHttpFailure(
@@ -269,10 +217,7 @@ function mapHttpStatus(
             );
 
         default:
-            if (
-                status >= 400 &&
-                status < 500
-            ) {
+            if (status >= 400 && status < 500) {
                 return expectedHttpFailure(
                     status,
                     'invalid_input',
@@ -304,14 +249,12 @@ function expectedHttpFailure(
 
 function createInternalFailure(): MappedApiFailure {
     return {
-        status:
-            HttpStatus.INTERNAL_SERVER_ERROR,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
 
         body: createErrorResponse({
             type: 'internal_error',
             code: API_ERROR_CODES.INTERNAL_ERROR,
-            message:
-                'An unexpected internal error occurred.',
+            message: 'An unexpected internal error occurred.',
         }),
 
         unexpected: true,
@@ -326,18 +269,13 @@ interface ErrorResponseInput {
     readonly message: string;
 
     readonly issues?: readonly {
-        readonly path: readonly (
-            | string
-            | number
-        )[];
+        readonly path: readonly (string | number)[];
 
         readonly message: string;
     }[];
 }
 
-function createErrorResponse(
-    input: ErrorResponseInput,
-): ApiErrorResponse {
+function createErrorResponse(input: ErrorResponseInput): ApiErrorResponse {
     return {
         error: {
             type: input.type,
@@ -347,46 +285,30 @@ function createErrorResponse(
             ...(input.issues === undefined
                 ? {}
                 : {
-                      issues:
-                          input.issues.map(
-                              (issue) => ({
-                                  path: [
-                                      ...issue.path,
-                                  ],
-                                  message:
-                                      issue.message,
-                              }),
-                          ),
+                      issues: input.issues.map((issue) => ({
+                          path: [...issue.path],
+                          message: issue.message,
+                      })),
                   }),
         },
     };
 }
 
-function readHttpStatus(
-    exception: unknown,
-): number | undefined {
+function readHttpStatus(exception: unknown): number | undefined {
     if (exception instanceof HttpException) {
         return exception.getStatus();
     }
 
-    if (
-        typeof exception !== 'object' ||
-        exception === null
-    ) {
+    if (typeof exception !== 'object' || exception === null) {
         return undefined;
     }
 
-    const candidate =
-        exception as {
-            readonly status?: unknown;
-            readonly statusCode?: unknown;
-        };
+    const candidate = exception as {
+        readonly status?: unknown;
+        readonly statusCode?: unknown;
+    };
 
-    if (
-        isHttpErrorStatus(
-            candidate.statusCode,
-        )
-    ) {
+    if (isHttpErrorStatus(candidate.statusCode)) {
         return candidate.statusCode;
     }
 
@@ -397,13 +319,6 @@ function readHttpStatus(
     return undefined;
 }
 
-function isHttpErrorStatus(
-    value: unknown,
-): value is number {
-    return (
-        typeof value === 'number' &&
-        Number.isInteger(value) &&
-        value >= 400 &&
-        value <= 599
-    );
+function isHttpErrorStatus(value: unknown): value is number {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 400 && value <= 599;
 }

@@ -4,9 +4,7 @@ export async function register(): Promise<void> {
     }
 
     const { loadWebServerRuntimeConfig } =
-        await import(
-            '../../src/platform/environment/server-environment'
-        );
+        await import('../../src/platform/environment/server-environment');
 
     loadWebServerRuntimeConfig();
 }

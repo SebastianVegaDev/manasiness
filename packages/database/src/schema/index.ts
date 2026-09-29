@@ -5,10 +5,7 @@ export {
     localDateColumn,
 } from './primitives.js';
 
-export {
-    currentTenantOrganizationIdSql,
-    tenantOrganizationIdColumn,
-} from './tenant.js';
+export { currentTenantOrganizationIdSql, tenantOrganizationIdColumn } from './tenant.js';
 
 /**
  * Drizzle product-domain schema entry point.

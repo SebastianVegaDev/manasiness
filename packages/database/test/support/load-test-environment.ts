@@ -1,9 +1,6 @@
 import { loadEnvFile } from 'node:process';
 
-const databaseEnvironmentFile = new URL(
-    '../../.env',
-    import.meta.url,
-);
+const databaseEnvironmentFile = new URL('../../.env', import.meta.url);
 
 export function loadDatabaseTestEnvironmentFileIfPresent(): void {
     try {
@@ -13,9 +10,7 @@ export function loadDatabaseTestEnvironmentFileIfPresent(): void {
             return;
         }
 
-        throw new Error(
-            'Unable to load packages/database/.env for database integration tests.',
-        );
+        throw new Error('Unable to load packages/database/.env for database integration tests.');
     }
 }
 

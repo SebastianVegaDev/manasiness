@@ -1,26 +1,16 @@
-import {
-    Logger,
-    Module,
-    type DynamicModule,
-} from '@nestjs/common';
+import { Logger, Module, type DynamicModule } from '@nestjs/common';
 
-import {
-    createDatabaseConnection,
-    type DatabaseRuntimeConfig,
-} from '@manasiness/database';
+import { createDatabaseConnection, type DatabaseRuntimeConfig } from '@manasiness/database';
 
 import { ContractsPlatformModule } from './platform/contracts/contracts-platform.module.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { HealthModule } from './platform/health/health.module.js';
 import { toSafeLogError } from './platform/logging/log-safety.js';
-import {
-    ObservabilityModule,
-} from './platform/logging/observability.module.js';
+import { ObservabilityModule } from './platform/logging/observability.module.js';
 import type { ObservabilityOptions } from './platform/logging/pino-options.js';
 
 interface AppDatabaseOptions {
-    readonly config:
-        DatabaseRuntimeConfig;
+    readonly config: DatabaseRuntimeConfig;
 
     readonly applicationName: string;
 }
@@ -30,77 +20,51 @@ interface AppHealthOptions {
 }
 
 interface AppModuleOptions {
-    readonly database:
-        AppDatabaseOptions;
+    readonly database: AppDatabaseOptions;
 
-    readonly observability:
-        ObservabilityOptions;
+    readonly observability: ObservabilityOptions;
 
-    readonly health:
-        AppHealthOptions;
+    readonly health: AppHealthOptions;
 }
 
 @Module({})
 export class AppModule {
-    static register(
-        options: AppModuleOptions,
-    ): DynamicModule {
-        const databasePoolLogger =
-            new Logger(
-                'DatabasePool',
-            );
+    static register(options: AppModuleOptions): DynamicModule {
+        const databasePoolLogger = new Logger('DatabasePool');
 
-        const databaseConnection =
-            createDatabaseConnection(
-                options.database.config,
-                {
-                    applicationName:
-                        options.database
-                            .applicationName,
+        const databaseConnection = createDatabaseConnection(options.database.config, {
+            applicationName: options.database.applicationName,
 
-                    onPoolError(
-                        error: unknown,
-                    ) {
-                        databasePoolLogger.error(
-                            {
-                                event:
-                                    'database.pool_background_error',
+            onPoolError(error: unknown) {
+                databasePoolLogger.error(
+                    {
+                        event: 'database.pool_background_error',
 
-                                error:
-                                    toSafeLogError(
-                                        error,
-                                    ),
-                            },
-                            'Background PostgreSQL pool error.',
-                        );
+                        error: toSafeLogError(error),
                     },
-                },
-            );
+                    'Background PostgreSQL pool error.',
+                );
+            },
+        });
 
         return {
             module: AppModule,
 
             imports: [
-                ObservabilityModule.register(
-                    options.observability,
-                ),
+                ObservabilityModule.register(options.observability),
 
                 DatabaseModule.register({
-                    connection:
-                        databaseConnection,
+                    connection: databaseConnection,
                 }),
 
                 HealthModule.register({
                     probes: [
                         {
-                            name:
-                                'postgresql',
+                            name: 'postgresql',
 
                             async check(): Promise<void> {
                                 await databaseConnection.probeReadiness(
-                                    options
-                                        .health
-                                        .readinessTimeoutMs,
+                                    options.health.readinessTimeoutMs,
                                 );
                             },
                         },

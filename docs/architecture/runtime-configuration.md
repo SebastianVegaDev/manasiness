@@ -2,7 +2,7 @@
 
 > **Status:** Active  
 > **Milestone:** M1 — Engineering Platform  
-> **Scope:** API, web runtime, and future infrastructure consumers
+> **Scope:** API, web runtime, and database tooling
 
 ## Purpose
 
@@ -105,7 +105,7 @@ A setting is required when the runtime cannot operate correctly without an expli
 
 Do not invent required variables solely because a future issue may use them.
 
-For example, `DATABASE_URL` does not become required until PostgreSQL is actually consumed.
+`DATABASE_URL` is required by the API runtime and migration tooling now that PostgreSQL is consumed. Browser code does not receive it.
 
 ## Defaults
 
@@ -283,13 +283,11 @@ It should not appear throughout:
 
 Framework-owned variables such as `NEXT_RUNTIME` may be read at the framework integration boundary when required.
 
-## Future database configuration
+## Database configuration
 
-Issue #28 will introduce PostgreSQL and Drizzle.
+`@manasiness/database` validates PostgreSQL connection and pool settings for the API runtime and database tooling. The API receives its runtime database configuration through that package. Migration and test commands use separate, explicitly named database URLs; tests do not fall back to the development URL.
 
-When the database package actually consumes database configuration, it should define and validate the database values it owns.
-
-Do not move database credentials into the API domain model or web runtime configuration.
+Database credentials remain outside the API domain model and web runtime configuration.
 
 ## Future secrets
 

@@ -4,9 +4,7 @@ export {
     type DatabaseConnection,
 } from './connection/database-connection.js';
 
-export type {
-    DatabaseClient,
-} from './connection/database-client.js';
+export type { DatabaseClient } from './connection/database-client.js';
 
 export {
     loadDatabaseRuntimeConfig,
@@ -17,9 +15,7 @@ export {
 
 export { applyDatabaseMigrations } from './migrations/apply-migrations.js';
 
-export {
-    assertRlsSafeRuntimeDatabaseRole,
-} from './tenant/runtime-role-security.js';
+export { assertRlsSafeRuntimeDatabaseRole } from './tenant/runtime-role-security.js';
 
 export {
     createTenantDatabaseScope,
@@ -29,9 +25,7 @@ export {
     type TenantPersistenceContext,
 } from './tenant/tenant-database-scope.js';
 
-export type {
-    DatabaseExecutor,
-} from './transaction/database-executor.js';
+export type { DatabaseExecutor } from './transaction/database-executor.js';
 
 export {
     NestedDatabaseTransactionError,

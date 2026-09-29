@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { useTranslations } from '../platform/i18n/localization-provider';
+import type { Translator } from '../platform/i18n/translator';
 import {
     Button,
     Dialog,
@@ -14,59 +16,53 @@ import {
 } from '../platform/ui';
 import styles from './primitive-diagnostics.module.css';
 
+type DiagnosticAction = 'none' | 'reviewed' | 'reset';
+
 export function PrimitiveDiagnostics() {
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [lastAction, setLastAction] = useState('None');
+    const [lastAction, setLastAction] = useState<DiagnosticAction>('none');
+    const t = useTranslations('diagnostics.primitives');
+    const lastActionLabel = resolveActionLabel(lastAction, t);
 
     return (
         <section className={styles['section']} aria-labelledby="primitive-foundation-title">
             <div>
-                <p className={styles['kicker']}>Interaction foundation</p>
+                <p className={styles['kicker']}>{t('kicker')}</p>
                 <h2 id="primitive-foundation-title" className={styles['title']}>
-                    Shared UI primitives are active.
+                    {t('title')}
                 </h2>
-                <p className={styles['description']}>
-                    This temporary engineering surface exercises keyboard, focus, form,
-                    disabled-state, and dialog behavior before the application shell replaces it.
-                </p>
+                <p className={styles['description']}>{t('description')}</p>
             </div>
 
             <Field>
-                <FieldLabel htmlFor="foundation-name">Foundation name</FieldLabel>
+                <FieldLabel htmlFor="foundation-name">{t('field.label')}</FieldLabel>
                 <Input
                     id="foundation-name"
                     aria-describedby="foundation-name-description"
                     defaultValue="Manasiness"
                 />
                 <FieldDescription id="foundation-name-description">
-                    Native field semantics stay explicit and feature-owned forms can compose them.
+                    {t('field.description')}
                 </FieldDescription>
             </Field>
 
             <div className={styles['actions']}>
-                <Menu triggerLabel="Foundation actions">
+                <Menu triggerLabel={t('menu.trigger')}>
                     <MenuItem
                         onSelect={() => {
-                            setLastAction('Reviewed');
+                            setLastAction('reviewed');
                         }}
                     >
-                        Mark reviewed
+                        {t('menu.markReviewed')}
                     </MenuItem>
                     <MenuItem
                         onSelect={() => {
-                            setLastAction('Reset');
+                            setLastAction('reset');
                         }}
                     >
-                        Reset review
+                        {t('menu.resetReview')}
                     </MenuItem>
-                    <MenuItem
-                        disabled
-                        onSelect={() => {
-                            setLastAction('Unavailable');
-                        }}
-                    >
-                        Unavailable action
-                    </MenuItem>
+                    <MenuItem disabled>{t('menu.unavailable')}</MenuItem>
                 </Menu>
 
                 <Button
@@ -75,23 +71,24 @@ export function PrimitiveDiagnostics() {
                         setDialogOpen(true);
                     }}
                 >
-                    Open dialog
+                    {t('dialog.open')}
                 </Button>
 
                 <Button variant="ghost" disabled>
-                    Disabled control
+                    {t('disabledControl')}
                 </Button>
             </div>
 
             <p className={styles['status']} aria-live="polite">
-                Last action: {lastAction}
+                {t('status.line', { action: lastActionLabel })}
             </p>
 
             <Dialog
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
-                title="Primitive dialog"
-                description="The native modal dialog owns top-layer modality while Manasiness owns its visual and API contract."
+                title={t('dialog.title')}
+                description={t('dialog.description')}
+                closeLabel={t('dialog.close')}
                 footer={
                     <Button
                         variant="secondary"
@@ -99,15 +96,23 @@ export function PrimitiveDiagnostics() {
                             setDialogOpen(false);
                         }}
                     >
-                        Done
+                        {t('dialog.done')}
                     </Button>
                 }
             >
-                <p>
-                    Keyboard users can dismiss this dialog with Escape or the explicit close
-                    control. Focus returns to the control that opened it.
-                </p>
+                <p>{t('dialog.body')}</p>
             </Dialog>
         </section>
     );
+}
+
+function resolveActionLabel(action: DiagnosticAction, t: Translator): string {
+    switch (action) {
+        case 'none':
+            return t('status.none');
+        case 'reviewed':
+            return t('status.reviewed');
+        case 'reset':
+            return t('status.reset');
+    }
 }

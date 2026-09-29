@@ -15,6 +15,8 @@ test('integrated Web + API + PostgreSQL stack is operational', async ({ page, re
 
     await page.goto('/');
 
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-US');
+
     await expect(
         page.getByRole('heading', {
             name: 'Manasiness',
@@ -97,4 +99,24 @@ test('shared UI primitives preserve accessible names, disabled state, and keyboa
 
     await expect(dialog).toBeHidden();
     await expect(dialogTrigger).toBeFocused();
+});
+
+test.describe('browser locale negotiation', () => {
+    test.use({ locale: 'es-PE' });
+
+    test('localizes server and client product copy without changing the route', async ({
+        page,
+    }) => {
+        await page.goto('/');
+
+        await expect(page).toHaveURL(/\/$/u);
+        await expect(page.locator('html')).toHaveAttribute('lang', 'es-PE');
+        await expect(page.getByText('La base de la aplicación web está operativa.')).toBeVisible();
+        await expect(page.getByText('Conexión con la API: operativa.')).toBeVisible();
+        await expect(
+            page.getByRole('button', {
+                name: 'Abrir diálogo',
+            }),
+        ).toBeVisible();
+    });
 });

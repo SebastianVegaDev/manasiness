@@ -17,13 +17,13 @@ export interface DialogProps {
     footer?: ReactNode;
     kind?: DialogKind;
     className?: string;
-    closeLabel?: string;
+    closeLabel: string;
 }
 
 export function Dialog({
     children,
     className,
-    closeLabel = 'Close dialog',
+    closeLabel,
     description,
     footer,
     kind = 'dialog',
@@ -123,10 +123,10 @@ export function AlertDialog(props: AlertDialogProps) {
 
 export interface DialogCloseButtonProps {
     onClose: () => void;
-    children?: ReactNode;
+    children: ReactNode;
 }
 
-export function DialogCloseButton({ children = 'Close', onClose }: DialogCloseButtonProps) {
+export function DialogCloseButton({ children, onClose }: DialogCloseButtonProps) {
     return (
         <Button variant="secondary" onClick={onClose}>
             {children}

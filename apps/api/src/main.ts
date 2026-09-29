@@ -1,4 +1,6 @@
-import { loadDatabaseRuntimeConfig } from '@manasiness/database';
+import {
+    loadDatabaseRuntimeConfig,
+} from '@manasiness/database';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -7,36 +9,63 @@ import { AppModule } from './app.module.js';
 import { loadApiRuntimeConfig } from './platform/config/api-runtime-config.js';
 import { loadApiEnvironmentFileIfPresent } from './platform/config/load-environment-file.js';
 import { resolveNestLogLevels } from './platform/config/nest-log-levels.js';
+import { configureApiContractBoundary } from './platform/http/configure-api-contract-boundary.js';
 import { configureHttpApplication } from './platform/http/configure-http-application.js';
+import { configureOpenApi } from './platform/openapi/configure-openapi.js';
 
-const bootstrapLogger = new Logger('Bootstrap');
+const bootstrapLogger =
+    new Logger('Bootstrap');
 
 async function bootstrap(): Promise<void> {
     loadApiEnvironmentFileIfPresent();
 
-    const config = loadApiRuntimeConfig();
+    const config =
+        loadApiRuntimeConfig();
+
     const databaseConfig =
-        loadDatabaseRuntimeConfig(process.env);
+        loadDatabaseRuntimeConfig(
+            process.env,
+        );
 
     const app =
         await NestFactory.create<NestExpressApplication>(
             AppModule.register({
                 database: {
-                    config: databaseConfig,
+                    config:
+                        databaseConfig,
+
                     applicationName:
-                        config.service.name,
+                        config.service
+                            .name,
                 },
             }),
             {
                 abortOnError: false,
-                logger: resolveNestLogLevels(
-                    config.service.logLevel,
-                ),
+
+                logger:
+                    resolveNestLogLevels(
+                        config.service
+                            .logLevel,
+                    ),
             },
         );
 
     try {
-        configureHttpApplication(app, config.http);
+        configureHttpApplication(
+            app,
+            config.http,
+        );
+
+        configureApiContractBoundary(
+            app,
+        );
+
+        configureOpenApi(app, {
+            enabled:
+                config
+                    .documentation
+                    .enabled,
+        });
 
         app.enableShutdownHooks();
 
@@ -49,18 +78,22 @@ async function bootstrap(): Promise<void> {
             `${config.service.name} listening on http://${config.http.host}:${String(config.http.port)} [${config.environment}]`,
         );
     } catch (error: unknown) {
-        const startupError = normalizeError(
-            error,
-            'API bootstrap failed.',
-        );
+        const startupError =
+            normalizeError(
+                error,
+                'API bootstrap failed.',
+            );
 
         try {
             await app.close();
-        } catch (closeError: unknown) {
-            const shutdownError = normalizeError(
-                closeError,
-                'API cleanup failed after an unsuccessful startup.',
-            );
+        } catch (
+            closeError: unknown
+        ) {
+            const shutdownError =
+                normalizeError(
+                    closeError,
+                    'API cleanup failed after an unsuccessful startup.',
+                );
 
             bootstrapLogger.error(
                 shutdownError.message,
@@ -80,16 +113,19 @@ function normalizeError(
         return error;
     }
 
-    return new Error(fallbackMessage);
+    return new Error(
+        fallbackMessage,
+    );
 }
 
 try {
     await bootstrap();
 } catch (error: unknown) {
-    const startupError = normalizeError(
-        error,
-        'API bootstrap failed.',
-    );
+    const startupError =
+        normalizeError(
+            error,
+            'API bootstrap failed.',
+        );
 
     bootstrapLogger.error(
         startupError.message,

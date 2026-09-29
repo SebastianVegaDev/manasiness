@@ -1,0 +1,58 @@
+.leadCard,
+.supportCard {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.leadCard {
+    padding: var(--space-6);
+}
+
+.supportGrid {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.supportCard {
+    padding: var(--space-5);
+}
+
+.cardHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.cardHeader h2 {
+    max-width: 34rem;
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-lg);
+}
+
+.leadCard p,
+.supportCard p {
+    max-width: var(--content-width-readable);
+    margin-bottom: 0;
+    color: var(--color-foreground-muted);
+}
+
+@media (min-width: 48rem) {
+    .leadCard {
+        padding: var(--space-8);
+    }
+
+    .supportGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-5);
+        margin-top: var(--space-5);
+    }
+
+    .supportCard {
+        padding: var(--space-6);
+    }
+}

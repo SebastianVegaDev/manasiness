@@ -9,6 +9,73 @@ const enUSMessages = {
         kicker: 'Product foundation',
         description: 'Web application foundation is running.',
     },
+    shell: {
+        skipToContent: 'Skip to main content',
+        navigation: {
+            shellLabel: 'Application navigation',
+            primaryLabel: 'Primary navigation',
+            currentLabel: 'Current page',
+            unknown: 'Product',
+            title: 'Navigation',
+            description: 'Move between available Manasiness product areas.',
+            open: 'Open navigation',
+            close: 'Close navigation',
+            notAvailable: 'Later',
+            groups: {
+                operate: 'Operate',
+                manage: 'Manage',
+                understand: 'Understand',
+                utility: 'Utility',
+            },
+            items: {
+                overview: 'Overview',
+                sales: 'Sales',
+                purchasing: 'Purchasing',
+                catalog: 'Catalog',
+                inventory: 'Inventory',
+                relationships: 'Relationships',
+                workforce: 'Workforce',
+                finance: 'Finance',
+                reporting: 'Reporting',
+                assistant: 'Operational Assistant',
+                settings: 'Organization Settings',
+            },
+        },
+        organization: {
+            label: 'Organization',
+            pending: 'Selection arrives in M3',
+            routeContext: 'Context {id}',
+        },
+        account: {
+            label: 'Account',
+            pending: 'Identity controls arrive in M3',
+        },
+    },
+    overviewFoundation: {
+        eyebrow: 'Product experience foundation',
+        title: 'Overview',
+        description:
+            'A clear starting point for daily operational work. Real business state will appear here only when its owning capabilities exist.',
+        foundation: {
+            title: 'The application shell is ready for real product capabilities.',
+            body: 'M2 now owns orientation, responsive navigation, page hierarchy, and stable extension points without inventing business data.',
+            badge: 'Foundation ready',
+        },
+        organization: {
+            title: 'Organization context is reserved, not fabricated.',
+            scopedBody:
+                'This route carries an explicit Organization identifier. M3 will validate Membership and resolve the Organization display context.',
+            unscopedBody:
+                'The shell reserves Organization selection without pretending an authenticated Organization already exists.',
+            scopedBadge: 'Route scoped',
+            deferredBadge: 'M3 handoff',
+        },
+        domains: {
+            title: 'Business areas activate only with real workflows.',
+            body: 'Sales, Catalog, Inventory, Finance, and the other V1 areas remain unavailable until their owning milestones provide actual capabilities.',
+            badge: 'Not implemented',
+        },
+    },
     health: {
         api: {
             checking: 'API connection: checking.',
@@ -60,6 +127,73 @@ const esPEMessages = {
     landing: {
         kicker: 'Base del producto',
         description: 'La base de la aplicación web está operativa.',
+    },
+    shell: {
+        skipToContent: 'Saltar al contenido principal',
+        navigation: {
+            shellLabel: 'Navegación de la aplicación',
+            primaryLabel: 'Navegación principal',
+            currentLabel: 'Página actual',
+            unknown: 'Producto',
+            title: 'Navegación',
+            description: 'Muévete entre las áreas disponibles de Manasiness.',
+            open: 'Abrir navegación',
+            close: 'Cerrar navegación',
+            notAvailable: 'Más adelante',
+            groups: {
+                operate: 'Operar',
+                manage: 'Gestionar',
+                understand: 'Comprender',
+                utility: 'Utilidad',
+            },
+            items: {
+                overview: 'Resumen',
+                sales: 'Ventas',
+                purchasing: 'Compras',
+                catalog: 'Catálogo',
+                inventory: 'Inventario',
+                relationships: 'Relaciones',
+                workforce: 'Personal',
+                finance: 'Finanzas',
+                reporting: 'Reportes',
+                assistant: 'Asistente operativo',
+                settings: 'Configuración de la organización',
+            },
+        },
+        organization: {
+            label: 'Organización',
+            pending: 'La selección llega en M3',
+            routeContext: 'Contexto {id}',
+        },
+        account: {
+            label: 'Cuenta',
+            pending: 'Los controles de identidad llegan en M3',
+        },
+    },
+    overviewFoundation: {
+        eyebrow: 'Base de experiencia del producto',
+        title: 'Resumen',
+        description:
+            'Un punto de partida claro para el trabajo operativo diario. El estado real del negocio aparecerá aquí solo cuando existan las capacidades responsables.',
+        foundation: {
+            title: 'El shell de la aplicación está listo para capacidades reales del producto.',
+            body: 'M2 ya es responsable de la orientación, la navegación responsive, la jerarquía de página y los puntos de extensión estables sin inventar datos del negocio.',
+            badge: 'Base lista',
+        },
+        organization: {
+            title: 'El contexto de Organización está reservado, no inventado.',
+            scopedBody:
+                'Esta ruta lleva un identificador explícito de Organización. M3 validará Membership y resolverá el contexto visible de la Organización.',
+            unscopedBody:
+                'El shell reserva la selección de Organización sin fingir que ya existe una Organización autenticada.',
+            scopedBadge: 'Ruta con contexto',
+            deferredBadge: 'Entrega a M3',
+        },
+        domains: {
+            title: 'Las áreas de negocio se activan solo con flujos reales.',
+            body: 'Ventas, Catálogo, Inventario, Finanzas y las demás áreas V1 permanecen no disponibles hasta que sus milestones responsables implementen capacidades reales.',
+            badge: 'No implementado',
+        },
     },
     health: {
         api: {

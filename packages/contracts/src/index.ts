@@ -23,6 +23,12 @@ export {
 } from './examples/contract-example.js';
 
 export {
-    entityIdTransportSchema,
-    type EntityIdTransport,
-} from './primitives/entity-id.js';
+    livenessResponseSchema,
+    readinessDependencyStateSchema,
+    readinessResponseSchema,
+    type LivenessResponse,
+    type ReadinessDependencyState,
+    type ReadinessResponse,
+} from './health/operational-health.js';
+
+export { entityIdTransportSchema, type EntityIdTransport } from './primitives/entity-id.js';

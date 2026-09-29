@@ -1,35 +1,34 @@
-import {
-    Controller,
-    Get,
-    HttpStatus,
-    Inject,
-    Res,
-} from '@nestjs/common';
+import { Controller, Get, HttpStatus, Inject, Res } from '@nestjs/common';
 
 import {
-    OperationalHealthService,
-    type ReadinessResult,
-} from './operational-health.service.js';
+    livenessResponseSchema,
+    readinessResponseSchema,
+    type LivenessResponse,
+    type ReadinessResponse,
+} from '@manasiness/contracts';
 
-interface LivenessResponse {
-    readonly status: 'ok';
-}
+import { ApiContractResponse } from '../openapi/api-contract-response.decorator.js';
+import { OperationalHealthService } from './operational-health.service.js';
 
 interface MutableHttpResponse {
-    status(
-        statusCode: number,
-    ): unknown;
+    status(statusCode: number): unknown;
 }
 
 @Controller('health')
 export class HealthController {
     constructor(
         @Inject(OperationalHealthService)
-        private readonly health:
-            OperationalHealthService,
+        private readonly health: OperationalHealthService,
     ) {}
 
     @Get('live')
+    @ApiContractResponse({
+        status: HttpStatus.OK,
+
+        description: 'The API process is alive.',
+
+        schema: livenessResponseSchema,
+    })
     getLiveness(): LivenessResponse {
         return {
             status: 'ok',
@@ -37,23 +36,30 @@ export class HealthController {
     }
 
     @Get('ready')
+    @ApiContractResponse({
+        status: HttpStatus.OK,
+
+        description: 'The API is ready to serve application traffic.',
+
+        schema: readinessResponseSchema,
+    })
+    @ApiContractResponse({
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+
+        description: 'A required serving dependency is unavailable.',
+
+        schema: readinessResponseSchema,
+    })
     async getReadiness(
         @Res({
             passthrough: true,
         })
         response: MutableHttpResponse,
-    ): Promise<
-        ReadinessResult['response']
-    > {
-        const result =
-            await this.health
-                .checkReadiness();
+    ): Promise<ReadinessResponse> {
+        const result = await this.health.checkReadiness();
 
         if (!result.ready) {
-            response.status(
-                HttpStatus
-                    .SERVICE_UNAVAILABLE,
-            );
+            response.status(HttpStatus.SERVICE_UNAVAILABLE);
         }
 
         return result.response;

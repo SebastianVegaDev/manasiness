@@ -22,7 +22,7 @@
         "test:database": "pnpm test:integration:prepare && vitest run --project integration",
         "test:api": "pnpm test:integration:prepare && vitest run --project api",
         "test:integration": "pnpm test:integration:prepare && vitest run --project integration --project api",
-        "test:e2e:prepare": "pnpm db:up && pnpm db:reset:test",
+        "test:e2e:prepare": "pnpm --filter @manasiness/contracts build && pnpm db:up && pnpm db:reset:test",
         "test:e2e": "pnpm test:e2e:prepare && playwright test",
         "test:e2e:install": "playwright install chromium",
         "test:all": "pnpm test && pnpm test:e2e",

@@ -1,0 +1,304 @@
+name: Quality Gates
+
+on:
+    pull_request:
+        branches:
+            - main
+
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+concurrency:
+    group: quality-gates-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+    TURBO_TELEMETRY_DISABLED: '1'
+    NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+    build:
+        name: Build
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 15
+
+        env:
+            APP_ENV: production
+            WEB_API_ORIGIN: https://api.manasiness.invalid
+            NEXT_PUBLIC_API_ORIGIN: https://api.manasiness.invalid
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Restore Turbo build cache
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+              with:
+                  path: .turbo
+                  key: >-
+                      turbo-${{ runner.os }}-build-${{
+                      hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json')
+                      }}-${{ github.sha }}
+                  restore-keys: |
+                      turbo-${{ runner.os }}-build-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json') }}-
+
+            - name: Build production artifacts
+              run: pnpm build
+
+    lint:
+        name: Lint
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+                  fetch-depth: 0
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Restore Turbo lint cache
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+              with:
+                  path: .turbo
+                  key: >-
+                      turbo-${{ runner.os }}-lint-${{
+                      hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json')
+                      }}-${{ github.sha }}
+                  restore-keys: |
+                      turbo-${{ runner.os }}-lint-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json') }}-
+
+            - name: Verify formatting
+              env:
+                  FORMAT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+              run: |
+                  git diff --name-only --diff-filter=ACMRT -z "$FORMAT_BASE_SHA" "$GITHUB_SHA" |
+                    xargs -0 -r pnpm exec prettier --check --ignore-unknown
+
+            - name: Run static analysis
+              run: pnpm lint
+
+    typecheck:
+        name: Typecheck
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 10
+
+        env:
+            APP_ENV: production
+            WEB_API_ORIGIN: https://api.manasiness.invalid
+            NEXT_PUBLIC_API_ORIGIN: https://api.manasiness.invalid
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Restore Turbo typecheck cache
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+              with:
+                  path: .turbo
+                  key: >-
+                      turbo-${{ runner.os }}-typecheck-${{
+                      hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json')
+                      }}-${{ github.sha }}
+                  restore-keys: |
+                      turbo-${{ runner.os }}-typecheck-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'turbo.json') }}-
+
+            - name: Run TypeScript validation
+              run: pnpm typecheck
+
+    tests:
+        name: Tests
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 25
+
+        env:
+            DATABASE_TEST_URL: postgresql://manasiness:manasiness_local@127.0.0.1:5432/manasiness_test
+
+            DATABASE_TEST_RUNTIME_URL: >-
+                postgresql://manasiness_app:manasiness_app_local@127.0.0.1:5432/manasiness_test
+
+            DATABASE_POOL_MAX: '10'
+            DATABASE_IDLE_TIMEOUT_MS: '30000'
+            DATABASE_CONNECTION_TIMEOUT_MS: '5000'
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Run unit, database integration, and API tests
+              run: pnpm test
+
+            - name: Print PostgreSQL logs after failure
+              if: failure()
+              run: docker compose logs --no-color postgres || true
+
+            - name: Stop PostgreSQL
+              if: always()
+              run: docker compose down --volumes --remove-orphans || true
+
+    database-migrations:
+        name: Database / Migrations
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 15
+
+        env:
+            DATABASE_MIGRATION_VALIDATION_URL: >-
+                postgresql://manasiness:manasiness_local@127.0.0.1:5432/manasiness_migration_validation
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Start PostgreSQL
+              run: pnpm db:up
+
+            - name: Validate migration metadata and clean replay
+              run: pnpm db:validate
+
+            - name: Print PostgreSQL logs after failure
+              if: failure()
+              run: docker compose logs --no-color postgres || true
+
+            - name: Stop PostgreSQL
+              if: always()
+              run: docker compose down --volumes --remove-orphans || true
+
+    browser-e2e:
+        name: Browser E2E
+
+        needs:
+            - build
+            - lint
+            - typecheck
+            - tests
+            - database-migrations
+
+        runs-on: ubuntu-24.04
+
+        timeout-minutes: 25
+
+        env:
+            DATABASE_TEST_URL: postgresql://manasiness:manasiness_local@127.0.0.1:5432/manasiness_test
+
+            DATABASE_TEST_RUNTIME_URL: >-
+                postgresql://manasiness_app:manasiness_app_local@127.0.0.1:5432/manasiness_test
+
+            DATABASE_POOL_MAX: '10'
+            DATABASE_IDLE_TIMEOUT_MS: '30000'
+            DATABASE_CONNECTION_TIMEOUT_MS: '5000'
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup repository toolchain
+              uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+              with:
+                  cache: true
+                  install: false
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Playwright Chromium
+              run: pnpm exec playwright install --with-deps chromium
+
+            - name: Build browser test servers
+              env:
+                  APP_ENV: test
+                  WEB_API_ORIGIN: http://127.0.0.1:3101
+                  NEXT_PUBLIC_API_ORIGIN: http://127.0.0.1:3101
+              run: pnpm build
+
+            - name: Run integrated browser smoke test
+              env:
+                  DEBUG: pw:webserver
+              run: timeout --signal=INT --kill-after=15s 240s pnpm test:e2e
+
+            - name: Print PostgreSQL logs after failure
+              if: failure()
+              run: docker compose logs --no-color postgres || true
+
+            - name: Upload Playwright failure artifacts
+              if: failure()
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                  name: playwright-failure-${{ github.run_id }}-${{ github.run_attempt }}
+                  path: |
+                      playwright-report/
+                      test-results/
+                  if-no-files-found: ignore
+                  retention-days: 7
+
+            - name: Stop PostgreSQL
+              if: always()
+              run: docker compose down --volumes --remove-orphans || true

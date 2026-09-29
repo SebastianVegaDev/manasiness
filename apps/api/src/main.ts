@@ -4,13 +4,16 @@ import {
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import {
+    Logger as PinoNestLogger,
+} from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
 import { loadApiRuntimeConfig } from './platform/config/api-runtime-config.js';
 import { loadApiEnvironmentFileIfPresent } from './platform/config/load-environment-file.js';
-import { resolveNestLogLevels } from './platform/config/nest-log-levels.js';
 import { configureApiContractBoundary } from './platform/http/configure-api-contract-boundary.js';
 import { configureHttpApplication } from './platform/http/configure-http-application.js';
+import { toSafeLogError } from './platform/logging/log-safety.js';
 import { configureOpenApi } from './platform/openapi/configure-openapi.js';
 
 const bootstrapLogger =
@@ -38,17 +41,41 @@ async function bootstrap(): Promise<void> {
                         config.service
                             .name,
                 },
+
+                observability: {
+                    serviceName:
+                        config.service
+                            .name,
+
+                    environment:
+                        config.environment,
+
+                    level:
+                        config.logging
+                            .level,
+
+                    pretty:
+                        config.logging
+                            .pretty,
+                },
+
+                health: {
+                    readinessTimeoutMs:
+                        config.health
+                            .readinessTimeoutMs,
+                },
             }),
             {
                 abortOnError: false,
-
-                logger:
-                    resolveNestLogLevels(
-                        config.service
-                            .logLevel,
-                    ),
+                bufferLogs: true,
             },
         );
+
+    app.useLogger(
+        app.get(
+            PinoNestLogger,
+        ),
+    );
 
     try {
         configureHttpApplication(
@@ -75,7 +102,23 @@ async function bootstrap(): Promise<void> {
         );
 
         bootstrapLogger.log(
-            `${config.service.name} listening on http://${config.http.host}:${String(config.http.port)} [${config.environment}]`,
+            {
+                event:
+                    'api.started',
+
+                service:
+                    config.service.name,
+
+                environment:
+                    config.environment,
+
+                host:
+                    config.http.host,
+
+                port:
+                    config.http.port,
+            },
+            'API started.',
         );
     } catch (error: unknown) {
         const startupError =
@@ -89,15 +132,17 @@ async function bootstrap(): Promise<void> {
         } catch (
             closeError: unknown
         ) {
-            const shutdownError =
-                normalizeError(
-                    closeError,
-                    'API cleanup failed after an unsuccessful startup.',
-                );
-
             bootstrapLogger.error(
-                shutdownError.message,
-                shutdownError.stack,
+                {
+                    event:
+                        'api.bootstrap_cleanup_failed',
+
+                    error:
+                        toSafeLogError(
+                            closeError,
+                        ),
+                },
+                'API cleanup failed after unsuccessful startup.',
             );
         }
 
@@ -121,15 +166,17 @@ function normalizeError(
 try {
     await bootstrap();
 } catch (error: unknown) {
-    const startupError =
-        normalizeError(
-            error,
-            'API bootstrap failed.',
-        );
-
     bootstrapLogger.error(
-        startupError.message,
-        startupError.stack,
+        {
+            event:
+                'api.bootstrap_failed',
+
+            error:
+                toSafeLogError(
+                    error,
+                ),
+        },
+        'API bootstrap failed.',
     );
 
     process.exitCode = 1;

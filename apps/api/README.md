@@ -2,7 +2,7 @@
 
 `@manasiness/api` is the backend runtime for the Manasiness modular monolith.
 
-It provides the executable NestJS process and platform-level HTTP, database, validation, error, and transport-contract foundation.
+It provides the executable NestJS process and platform-level HTTP, database, validation, error, observability, and transport-contract foundation.
 
 Product-domain capabilities are added only by the milestones that own them.
 
@@ -15,7 +15,8 @@ The API uses:
 - TypeScript with the repository NodeNext configuration;
 - Express through the NestJS platform adapter;
 - PostgreSQL through `@manasiness/database`;
-- Zod-backed Standard Schemas through `@manasiness/contracts`.
+- Zod-backed transport contracts through `@manasiness/contracts`;
+- Pino through `nestjs-pino` for structured technical logging.
 
 The application is an ES module.
 
@@ -27,7 +28,7 @@ Create:
 Copy-Item apps/api/.env.example apps/api/.env
 ```
 
-Start local PostgreSQL:
+Start PostgreSQL:
 
 ```powershell
 pnpm db:up
@@ -45,224 +46,217 @@ The default address is:
 http://127.0.0.1:3001
 ```
 
-## Runtime configuration
+## Structured logging
 
-Feature and domain code must not read `process.env` directly.
-
-API-specific runtime configuration is owned under:
+Application logging is routed through:
 
 ```text
-src/platform/config/
+Nest Logger
+    ↓
+nestjs-pino
+    ↓
+Pino
 ```
 
-Current API values include:
-
-| Variable | Required | Default |
-| --- | --- | --- |
-| `APP_ENV` | yes | none |
-| `API_SERVICE_NAME` | no | `manasiness-api` |
-| `API_LOG_LEVEL` | no | `info` |
-| `API_HOST` | no | `127.0.0.1` |
-| `API_PORT` | no | `3001` |
-| `API_BODY_LIMIT_BYTES` | no | `1048576` |
-| `API_CORS_ORIGINS` | no | none |
-| `API_DOCS_ENABLED` | no | `false` |
-
-Database configuration is validated by `@manasiness/database`.
-
-## Transport contracts
-
-Transport-facing request/query/response schemas are owned by:
-
-```text
-@manasiness/contracts
-```
-
-The package is shared by transports/clients that need the public wire representation.
-
-It does not own domain behavior.
-
-A controller attaches the real schema directly:
+Application code should normally use:
 
 ```typescript
-@Body({
-    schema: createThingRequestSchema,
-})
-body: CreateThingRequest
+import { Logger } from '@nestjs/common';
+
+const logger = new Logger(MyService.name);
 ```
 
-NestJS's Standard Schema validation pipe executes the schema before the controller method receives the value.
+Product/domain modules must not import a hosted logging-provider SDK.
 
-The controller therefore receives validated transport data.
+The logging backend may therefore evolve independently from business code.
 
-## Params and query
+## Log format
 
-Path parameters and query objects use the same mechanism:
+Normal runtime logs are structured JSON.
 
-```typescript
-@Param({
-    schema: paramsSchema,
-})
-params: Params
+For example, a production-oriented event contains fields conceptually similar to:
 
-@Query({
-    schema: querySchema,
-})
-query: Query
+```json
+{
+    "level": 30,
+    "time": "2026-09-28T23:00:00.000Z",
+    "service": "manasiness-api",
+    "environment": "production",
+    "requestId": "f2da25d9-d483-4b51-8ba9-3f39599ef32f",
+    "context": "ExampleService",
+    "msg": "Operation completed."
+}
 ```
 
-Do not manually repeat validation rules inside controllers.
-
-## Domain validation
-
-Transport validation is not business validation.
-
-Transport schemas may verify:
+Local development may enable:
 
 ```text
-UUID shape
-string length
-number representation
-required fields
-allowed transport enum values
+API_LOG_PRETTY=true
 ```
 
-Application/domain logic still verifies:
+which renders the same structured events through `pino-pretty`.
+
+Pretty logging is deliberately rejected outside the development environment.
+
+## Log level
+
+The threshold is controlled by:
 
 ```text
-business invariants
+API_LOG_LEVEL
+```
+
+Allowed values:
+
+```text
+debug
+info
+warn
+error
+```
+
+A domain must not decide global logging verbosity.
+
+## Request IDs
+
+Every HTTP request receives one request/correlation identifier.
+
+The canonical HTTP header is:
+
+```text
+X-Request-ID
+```
+
+A caller may provide a safe request ID.
+
+When no valid ID exists, the API generates a UUID.
+
+The resulting identifier is:
+
+- attached to request-scoped logs;
+- available through `RequestContextService`;
+- returned in the `X-Request-ID` response header.
+
+The CORS configuration exposes this response header so browser JavaScript may read it.
+
+## Request ID trust
+
+A request ID is diagnostic metadata only.
+
+It must never be used as:
+
+```text
+authentication
 authorization
-state transitions
-cross-entity rules
-Organization capability rules
+Identity
+Organization context
+Membership context
+idempotency proof
 ```
 
-A request being structurally valid does not mean the business operation is allowed.
+A caller being able to choose a request ID gives them no additional authority.
 
-## Response contracts
+## Request context
 
-Response schemas are applied using NestJS Standard Schema serialization.
+Request correlation uses `AsyncLocalStorage`.
 
-A declared response schema is an allowlist of properties allowed to cross the HTTP boundary.
-
-This prevents internal/persistence fields from leaving the API merely because the internal object contains them.
-
-The API's response/OpenAPI helper uses the same Zod schema for:
+Application code that genuinely needs the current support/debug identifier may inject:
 
 ```text
-runtime response serialization
-+
-OpenAPI response documentation
+RequestContextService
 ```
 
-Do not create a separate handwritten Swagger response schema.
+and call:
 
-## API errors
-
-All structured API failures use:
-
-```json
-{
-    "error": {
-        "type": "invalid_input",
-        "code": "transport.invalid_input",
-        "message": "Request validation failed."
-    }
-}
+```typescript
+requestContext.getRequestId();
 ```
 
-Validation failures may also contain:
+The service deliberately contains only correlation information.
 
-```json
-{
-    "issues": [
-        {
-            "path": [
-                "email"
-            ],
-            "message": "Invalid email address."
-        }
-    ]
-}
-```
+Organization and actor authority stay in their explicit application/security boundaries.
 
-## Error categories
+## HTTP request logging
 
-The generic categories are:
+The default HTTP logger records only operational metadata such as:
 
 ```text
-invalid_input
-unauthenticated
-unauthorized
-not_found
-conflict
-business_rejection
-rate_limited
-internal_error
+requestId
+method
+path
+status code
+duration
+service
+environment
 ```
 
-Broad HTTP mapping:
+It does not log by default:
 
 ```text
-400 → invalid_input
-401 → unauthenticated
-403 → unauthorized
-404 → not_found
-409 → conflict
-422 → business_rejection
-429 → rate_limited
-500 → internal_error
+request body
+response body
+request headers
+cookies
+authorization header
+query string
 ```
 
-## Stable machine codes
+The URL logger records the path without the query component.
 
-Clients should branch on:
+This reduces accidental credential/PII exposure.
+
+## Secret redaction
+
+Structured logging redacts known secret-bearing fields such as:
 
 ```text
-error.type
-error.code
+password
+token
+accessToken
+refreshToken
+sessionToken
+apiKey
+secret
+clientSecret
+databaseUrl
+connectionString
+authorization
+cookie
 ```
 
-not:
+Representative nested credential locations are covered as well.
+
+Error strings receive additional sanitization for:
 
 ```text
-error.message
+URI credentials
+Bearer credentials
+Basic credentials
+password=...
+token=...
+api_key=...
+secret=...
 ```
 
-Examples:
+Redaction is defense in depth.
+
+Code must still avoid logging complete:
 
 ```text
-transport.invalid_input
-auth.unauthenticated
-resource.not_found
-inventory.insufficient_stock
+process.env
+runtime configuration objects
+credentials
+request bodies
+authorization/session objects
 ```
 
-Human-readable messages may evolve or eventually be localized.
+## Unexpected errors
 
-## Expected application failures
+Unexpected exceptions are logged server-side with correlation context.
 
-Application/domain code must not know HTTP status codes.
+They are not serialized directly to clients.
 
-The API provides an `ExpectedApplicationError` transport-mapping boundary for expected application failures.
-
-It carries:
-
-```text
-semantic kind
-machine code
-explicitly safe public message
-```
-
-The exception filter translates the semantic kind into HTTP transport semantics.
-
-Domain-specific error types may later be mapped into this boundary by their owning application modules.
-
-## Unexpected failures
-
-Unexpected exceptions are never serialized directly.
-
-The client receives only:
+The client continues to receive the stable error contract:
 
 ```json
 {
@@ -274,19 +268,197 @@ The client receives only:
 }
 ```
 
-The following never belong in an API response:
+Support/debugging can correlate the client-visible:
 
 ```text
-stack trace
-database error object
-SQL
-filesystem path
-environment variables
-internal exception messages
-secret values
+X-Request-ID
 ```
 
-Issue #33 owns the structured logging/correlation strategy for server-side diagnostics.
+with the server-side structured event.
+
+## Technical logging versus business audit
+
+Technical logs are not the permanent business audit trail.
+
+Technical logging answers questions such as:
+
+```text
+Which request failed?
+How long did it take?
+Which dependency was unavailable?
+Which exception occurred?
+```
+
+Business audit eventually answers questions such as:
+
+```text
+Who changed the Sale?
+What changed?
+Why was it changed?
+What was the previous authoritative value?
+```
+
+Those responsibilities must remain separate.
+
+Issue #33 does not implement domain Audit Events.
+
+## Liveness
+
+The liveness endpoint is:
+
+```text
+GET /health/live
+```
+
+Successful response:
+
+```json
+{
+    "status": "ok"
+}
+```
+
+Liveness means:
+
+```text
+the process is alive and capable of answering HTTP
+```
+
+It deliberately does not check PostgreSQL.
+
+A PostgreSQL outage must not make liveness fail.
+
+Otherwise an orchestrator could repeatedly restart a healthy application process because an external dependency is unavailable.
+
+## Readiness
+
+The readiness endpoint is:
+
+```text
+GET /health/ready
+```
+
+When all required dependencies are available:
+
+```json
+{
+    "status": "ready",
+    "dependencies": {
+        "postgresql": "ready"
+    }
+}
+```
+
+HTTP status:
+
+```text
+200
+```
+
+When PostgreSQL is unavailable:
+
+```json
+{
+    "status": "not_ready",
+    "dependencies": {
+        "postgresql": "unavailable"
+    }
+}
+```
+
+HTTP status:
+
+```text
+503
+```
+
+Readiness therefore answers:
+
+```text
+should this instance currently receive application traffic?
+```
+
+## Readiness timeout
+
+PostgreSQL readiness uses:
+
+```text
+API_READINESS_TIMEOUT_MS
+```
+
+with a default of:
+
+```text
+2000
+```
+
+The value is bounded by runtime configuration.
+
+The database probe performs only:
+
+```sql
+SELECT 1
+```
+
+It does not:
+
+```text
+write data
+run migrations
+modify session tenant context
+perform domain queries
+```
+
+## Readiness extension
+
+`HealthModule` consumes explicit readiness probes.
+
+PostgreSQL is currently the only required runtime dependency.
+
+Future required infrastructure may register additional probes without changing liveness semantics.
+
+Do not add optional third-party integrations to readiness merely because they exist.
+
+A dependency should affect readiness only when the API genuinely cannot serve required traffic without it.
+
+## Health request logging
+
+Successful health probes are excluded from automatic HTTP request logging to avoid high-volume probe noise.
+
+Readiness failures produce an explicit warning event.
+
+Request correlation still exists for the health HTTP request.
+
+## Database pool failures
+
+Background node-postgres pool errors are handled and logged through the structured technical logger.
+
+The pool error listener prevents an idle-connection error event from becoming an unhandled EventEmitter error.
+
+Logging callback failures are prevented from crashing the database pool.
+
+## Transport contracts
+
+Transport-facing schemas remain owned by:
+
+```text
+@manasiness/contracts
+```
+
+Transport validation does not replace domain validation.
+
+## API errors
+
+Clients branch on:
+
+```text
+error.type
+error.code
+```
+
+not human-readable messages.
+
+Unexpected internal values and stack traces never belong in the HTTP response.
 
 ## OpenAPI
 
@@ -296,122 +468,35 @@ When:
 API_DOCS_ENABLED=true
 ```
 
-the generated OpenAPI document is available at:
+the raw OpenAPI document is exposed at:
 
 ```text
 GET /docs/openapi.json
 ```
 
-Swagger UI is intentionally not enabled by this foundation.
-
-The raw OpenAPI document is sufficient for:
-
-```text
-API inspection
-documentation tooling
-integration tooling
-future client generation
-```
-
-Request schemas are derived from the same Standard Schemas used for runtime validation.
-
-Response schemas are derived from the same Zod schemas used for runtime response serialization.
-
-OpenAPI is not a second hand-written schema source.
-
-## Contract example
-
-M1 contains one engineering-only contract example:
-
-```text
-POST /_platform/contracts/example/:entityId
-```
-
-It exists to prove:
-
-```text
-path validation
-query validation/transformation
-body validation
-response serialization
-OpenAPI generation
-structured invalid-input errors
-```
-
-It contains no product-domain behavior.
-
-Future real endpoint issues should replace the need to rely on this example for development.
+Swagger UI is not part of the M1 baseline.
 
 ## Database runtime role
 
-The API connects with a dedicated non-privileged database runtime role.
-
-Local development uses:
+The API uses the dedicated non-privileged runtime role:
 
 ```text
 manasiness_app
 ```
 
-Do not configure the API with the migration/admin role.
-
-The API verifies at startup that the runtime role cannot trivially bypass tenant RLS.
+The migration/admin role is not an application runtime credential.
 
 ## Tenant persistence
 
-Organization-owned persistence uses:
+Organization-owned persistence requires:
 
 ```text
 TENANT_DATABASE_SCOPE
 ```
 
-The scope requires explicit Organization context.
+Request correlation is independent from tenant isolation.
 
-Transport input alone never establishes tenant authority.
-
-Authentication/Membership/application authorization must establish the authoritative Organization context first.
-
-## Unscoped persistence
-
-The database module exposes deliberately exceptional capabilities:
-
-```text
-UNSCOPED_DATABASE_EXECUTOR
-UNSCOPED_DATABASE_TRANSACTION_RUNNER
-```
-
-They exist for genuinely global/platform persistence.
-
-Organization-owned product modules should use tenant-scoped persistence.
-
-## CORS
-
-CORS is closed by default.
-
-Local browser development normally uses:
-
-```text
-API_CORS_ORIGINS=http://localhost:3000
-```
-
-CORS is not authentication, authorization, or tenant isolation.
-
-## Liveness
-
-```text
-GET /health/live
-```
-
-returns:
-
-```json
-{
-    "status": "ok"
-}
-```
-
-Liveness does not perform dependency-readiness checks.
-
-Readiness belongs to the later observability foundation.
+A `requestId` must never be treated as an `organizationId`.
 
 ## Source layout
 
@@ -430,14 +515,10 @@ src/
         errors/
         health/
         http/
+        logging/
         openapi/
+        request-context/
 ```
-
-`modules/` owns business capabilities.
-
-`platform/` owns technical runtime integration.
-
-Do not move business behavior into `platform/`.
 
 ## Commands
 
@@ -479,13 +560,13 @@ pnpm --filter @manasiness/api start
 
 ## Boundaries
 
-- contracts describe transport, not domain entities;
-- transport validation does not replace business validation;
-- HTTP status is not domain state;
-- human-readable error messages are not machine identifiers;
-- unexpected exceptions never expose internals;
-- Organization-owned persistence still requires explicit tenant context;
-- controllers do not own business invariants;
-- controllers do not own transaction boundaries;
-- modules do not mutate another module's persistence directly;
-- shared packages do not depend on application internals.
+- technical logging is not business audit;
+- request correlation is not authorization context;
+- pure domain behavior does not depend on Pino;
+- request and response bodies are not logged by default;
+- secrets are not intentionally emitted to logs;
+- unexpected exceptions remain private from clients;
+- liveness does not depend on external infrastructure;
+- readiness only represents required serving dependencies;
+- Organization-owned persistence remains explicitly tenant-scoped;
+- controllers do not own business invariants or transaction boundaries.

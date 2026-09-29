@@ -79,8 +79,7 @@ const environmentBooleanSchema =
             }
 
             if (
-                typeof value !==
-                'string'
+                typeof value !== 'string'
             ) {
                 return value;
             }
@@ -107,8 +106,8 @@ const environmentBooleanSchema =
         z.boolean(),
     );
 
-const apiEnvironmentSchema =
-    z.object({
+const apiEnvironmentSchema = z
+    .object({
         APP_ENV:
             runtimeEnvironmentSchema,
 
@@ -124,6 +123,9 @@ const apiEnvironmentSchema =
             runtimeLogLevelSchema.default(
                 'info',
             ),
+
+        API_LOG_PRETTY:
+            environmentBooleanSchema,
 
         API_HOST: z
             .string()
@@ -157,7 +159,35 @@ const apiEnvironmentSchema =
 
         API_DOCS_ENABLED:
             environmentBooleanSchema,
-    });
+
+        API_READINESS_TIMEOUT_MS:
+            z.coerce
+                .number()
+                .int()
+                .min(100)
+                .max(10_000)
+                .default(2_000),
+    })
+    .superRefine(
+        (value, context) => {
+            if (
+                value.API_LOG_PRETTY &&
+                value.APP_ENV !==
+                    'development'
+            ) {
+                context.addIssue({
+                    code: 'custom',
+
+                    path: [
+                        'API_LOG_PRETTY',
+                    ],
+
+                    message:
+                        'may only be enabled in development',
+                });
+            }
+        },
+    );
 
 export type RuntimeEnvironment =
     z.infer<
@@ -171,9 +201,13 @@ export type RuntimeLogLevel =
 
 export interface ApiServiceRuntimeConfig {
     readonly name: string;
+}
 
-    readonly logLevel:
+export interface ApiLoggingRuntimeConfig {
+    readonly level:
         RuntimeLogLevel;
+
+    readonly pretty: boolean;
 }
 
 export interface ApiHttpRuntimeConfig {
@@ -191,6 +225,10 @@ export interface ApiDocumentationRuntimeConfig {
     readonly enabled: boolean;
 }
 
+export interface ApiHealthRuntimeConfig {
+    readonly readinessTimeoutMs: number;
+}
+
 export interface ApiRuntimeConfig {
     readonly environment:
         RuntimeEnvironment;
@@ -198,11 +236,17 @@ export interface ApiRuntimeConfig {
     readonly service:
         ApiServiceRuntimeConfig;
 
+    readonly logging:
+        ApiLoggingRuntimeConfig;
+
     readonly http:
         ApiHttpRuntimeConfig;
 
     readonly documentation:
         ApiDocumentationRuntimeConfig;
+
+    readonly health:
+        ApiHealthRuntimeConfig;
 }
 
 export function loadApiRuntimeConfig(
@@ -222,6 +266,11 @@ export function loadApiRuntimeConfig(
             API_LOG_LEVEL:
                 environment[
                     'API_LOG_LEVEL'
+                ],
+
+            API_LOG_PRETTY:
+                environment[
+                    'API_LOG_PRETTY'
                 ],
 
             API_HOST:
@@ -248,6 +297,11 @@ export function loadApiRuntimeConfig(
                 environment[
                     'API_DOCS_ENABLED'
                 ],
+
+            API_READINESS_TIMEOUT_MS:
+                environment[
+                    'API_READINESS_TIMEOUT_MS'
+                ],
         });
 
     if (!result.success) {
@@ -265,21 +319,25 @@ export function loadApiRuntimeConfig(
             ),
         ]);
 
-    const service =
-        Object.freeze<ApiServiceRuntimeConfig>(
-            {
+    return Object.freeze<ApiRuntimeConfig>(
+        {
+            environment:
+                result.data.APP_ENV,
+
+            service: Object.freeze({
                 name: result.data
                     .API_SERVICE_NAME,
+            }),
 
-                logLevel:
-                    result.data
-                        .API_LOG_LEVEL,
-            },
-        );
+            logging: Object.freeze({
+                level: result.data
+                    .API_LOG_LEVEL,
 
-    const http =
-        Object.freeze<ApiHttpRuntimeConfig>(
-            {
+                pretty: result.data
+                    .API_LOG_PRETTY,
+            }),
+
+            http: Object.freeze({
                 host: result.data
                     .API_HOST,
 
@@ -291,28 +349,20 @@ export function loadApiRuntimeConfig(
                         .API_BODY_LIMIT_BYTES,
 
                 corsOrigins,
-            },
-        );
+            }),
 
-    const documentation =
-        Object.freeze<ApiDocumentationRuntimeConfig>(
-            {
-                enabled:
+            documentation:
+                Object.freeze({
+                    enabled:
+                        result.data
+                            .API_DOCS_ENABLED,
+                }),
+
+            health: Object.freeze({
+                readinessTimeoutMs:
                     result.data
-                        .API_DOCS_ENABLED,
-            },
-        );
-
-    return Object.freeze<ApiRuntimeConfig>(
-        {
-            environment:
-                result.data.APP_ENV,
-
-            service,
-
-            http,
-
-            documentation,
+                        .API_READINESS_TIMEOUT_MS,
+            }),
         },
     );
 }
@@ -325,22 +375,16 @@ function createRuntimeConfigurationError(
         error.issues
             .map((issue) => {
                 const path =
-                    issue.path
-                        .length ===
-                    0
+                    issue.path.length === 0
                         ? 'environment'
                         : issue.path
                               .map(
-                                  (
-                                      segment,
-                                  ) =>
+                                  (segment) =>
                                       String(
                                           segment,
                                       ),
                               )
-                              .join(
-                                  '.',
-                              );
+                              .join('.');
 
                 return `- ${path}: ${issue.message}`;
             })

@@ -12,7 +12,7 @@ import {
 const canonicalUuidV7 =
     '0199f421-55a4-7c8d-9cab-12d9e50ce741';
 
-test('entity transport identifiers require UUIDv7', () => {
+void test('entity transport identifiers require UUIDv7', () => {
     assert.equal(
         entityIdTransportSchema.parse(
             canonicalUuidV7,
@@ -27,7 +27,7 @@ test('entity transport identifiers require UUIDv7', () => {
     );
 });
 
-test('query contracts transform external values into handler values', () => {
+void test('query contracts transform external values into handler values', () => {
     const result =
         contractExampleQuerySchema.parse({
             limit: '7',
@@ -36,7 +36,7 @@ test('query contracts transform external values into handler values', () => {
     assert.equal(result.limit, 7);
 });
 
-test('request contracts reject unknown fields', () => {
+void test('request contracts reject unknown fields', () => {
     assert.throws(() =>
         contractExampleRequestSchema.parse({
             label: 'Example',
@@ -45,7 +45,7 @@ test('request contracts reject unknown fields', () => {
     );
 });
 
-test('API error response accepts the stable foundation shape', () => {
+void test('API error response accepts the stable foundation shape', () => {
     const result = apiErrorResponseSchema.parse({
         error: {
             type: 'invalid_input',
@@ -67,7 +67,7 @@ test('API error response accepts the stable foundation shape', () => {
     );
 });
 
-test('API error codes require machine-readable namespaces', () => {
+void test('API error codes require machine-readable namespaces', () => {
     assert.throws(() =>
         apiErrorResponseSchema.parse({
             error: {

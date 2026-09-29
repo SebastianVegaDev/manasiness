@@ -25,3 +25,13 @@ test('integrated Web + API + PostgreSQL stack is operational', async ({ page, re
 
     await expect(page.getByText('API connection: ready.')).toBeVisible();
 });
+
+test('stored theme preference is applied before the application hydrates', async ({ page }) => {
+    await page.addInitScript("localStorage.setItem('manasiness.theme', 'dark');");
+
+    await page.goto('/');
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(11, 16, 32)');
+});

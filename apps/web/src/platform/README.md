@@ -8,7 +8,9 @@ Examples include:
 - API transport infrastructure;
 - observability integration;
 - browser/runtime adapters;
-- framework integration boundaries.
+- framework integration boundaries;
+- application-level styling tokens;
+- theme initialization.
 
 Platform code must not become a generic location for business behavior.
 
@@ -63,6 +65,42 @@ It must never be applied to a value merely to make it accessible from a Client C
 Private server configuration is validated through the server environment boundary and protected with `server-only`.
 
 The Next.js instrumentation hook validates required Node-runtime configuration before the server becomes ready.
+
+## Styling tokens
+
+Application-level semantic visual tokens live under:
+
+```text
+platform/styling/
+```
+
+This boundary owns product-wide CSS custom properties such as semantic colors, spacing, radii, elevation, typography scales, focus values, motion values, content widths, and stacking levels.
+
+It does not own feature-specific layout or business presentation semantics.
+
+Feature and later primitive CSS should consume these tokens instead of creating independent palettes or spacing scales.
+
+## Theme initialization
+
+Theme preference parsing and pre-hydration initialization live under:
+
+```text
+platform/theme/
+```
+
+Theme state is presentation state only. It must not become Organization configuration or authorization state.
+
+The durable styling/theme rationale is recorded in:
+
+```text
+docs/adr/0014-web-styling-and-theme-foundation.md
+```
+
+Product visual guidance lives in:
+
+```text
+docs/product/visual-foundation.md
+```
 
 ## Data access
 

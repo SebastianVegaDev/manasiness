@@ -153,7 +153,7 @@ API        127.0.0.1:3101
 PostgreSQL manasiness_test
 ```
 
-The browser harness starts isolated Web and API development processes with test configuration. The separate `Build` gate validates production artifacts.
+The browser harness builds and starts the API artifact, then starts the Web development runtime with test configuration. Both servers run as direct Node processes so Playwright can stop them reliably. The separate `Build` gate validates the complete production build.
 
 Failure traces, screenshots, videos, and the HTML report are uploaded as short-lived GitHub Actions artifacts.
 

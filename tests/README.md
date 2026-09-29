@@ -177,7 +177,7 @@ Run:
 pnpm test:e2e
 ```
 
-Playwright starts isolated Web and API development processes with its own test configuration. The command builds required shared packages and prepares the dedicated test database.
+Playwright starts the built API and an isolated Web development process with its own test configuration. The command builds the API and its dependencies and prepares the dedicated test database.
 
 The test stack uses:
 

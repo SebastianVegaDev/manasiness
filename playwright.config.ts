@@ -70,7 +70,9 @@ export default defineConfig({
         {
             name: 'API',
 
-            command: 'pnpm --filter @manasiness/api dev',
+            command: 'node dist/main.js',
+
+            cwd: './apps/api',
 
             url: `${apiOrigin}/health/ready`,
 
@@ -117,7 +119,9 @@ export default defineConfig({
         {
             name: 'Web',
 
-            command: 'pnpm --filter @manasiness/web dev --hostname 127.0.0.1 --port 3100',
+            command: 'node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100',
+
+            cwd: './apps/web',
 
             url: webOrigin,
 

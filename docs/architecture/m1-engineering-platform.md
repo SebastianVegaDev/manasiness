@@ -22,7 +22,7 @@ Validation used a detached clean worktree, the pinned Node 24.21.0/pnpm 12.6.0 t
 
 The complete local gate is `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm db:check`, `pnpm db:validate`, and `pnpm test:e2e`. The migration validator replays committed history into an empty validation database. Unit, integration, and API tests cover configuration, errors, redaction, transactions, and tenant isolation; the RLS test checks missing context, cross-tenant reads and writes, tenant-qualified foreign keys, and context cleanup. Spot checks also confirmed invalid API configuration fails startup and a test reset aimed at the development database is refused.
 
-The readiness pass corrected repository-wide formatting drift so the root formatting command can be a full CI gate. It also made browser E2E start isolated development processes with test origins, independent of the public API origin embedded in a previous production build. Production artifacts remain covered by the separate Build gate.
+The readiness pass corrected repository-wide formatting drift so the root formatting command can be a full CI gate. Browser E2E now builds and starts the API artifact and starts an isolated Web development runtime with test origins, independent of the public API origin embedded in a previous production build. The separate Build gate validates the complete production build.
 
 ## Intentional deferrals
 

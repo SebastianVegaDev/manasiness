@@ -13,7 +13,7 @@ Examples include:
 - theme initialization;
 - localization and presentation formatting;
 - reusable domain-neutral UI primitives;
-- reusable domain-neutral form and collection composition.
+- reusable domain-neutral form, collection, and feedback composition.
 
 Platform code must not become a generic location for business behavior.
 
@@ -33,7 +33,7 @@ import 'server-only';
 
 for modules that must never enter a Client Component dependency graph.
 
-Interactive UI code should establish the smallest possible Client Component boundary. A menu or dialog requiring browser state must not force an entire route or shell into the client module graph.
+Interactive UI code should establish the smallest possible Client Component boundary. A menu, dialog, or transient-notification provider requiring browser state must not force an entire route or shell into the client module graph.
 
 ## Runtime configuration
 
@@ -177,9 +177,9 @@ Domain-neutral form composition lives under:
 platform/forms/
 ```
 
-This boundary coordinates accessible field/error relationships, generic submission/focus conventions, structured API-error classification, and consequential confirmation composition.
+This boundary coordinates accessible field/error relationships, generic submission/focus conventions, and form-specific structured API-error classification.
 
-It does not own feature schemas, business validation meaning, API commands, feature error copy, or post-success navigation.
+It does not own feature schemas, business validation meaning, API commands, feature error copy, product-wide transient notification orchestration, consequential confirmation, or post-success navigation.
 
 The form interaction contract is documented in:
 
@@ -211,6 +211,40 @@ The collection interaction contract is documented in:
 
 ```text
 docs/product/collection-and-data-display-patterns.md
+```
+
+## Reusable feedback composition
+
+Domain-neutral product-wide feedback composition lives under:
+
+```text
+platform/feedback/
+```
+
+This boundary owns:
+
+- inline alert and persistent banner composition;
+- generic page/section loading and absence states;
+- transient toast lifecycle/dismissal behavior;
+- broad API/client failure classification from existing machine-readable errors;
+- consequential/destructive confirmation composition.
+
+It does not own:
+
+- feature/domain error catalogs;
+- business validation meaning;
+- localized feature-specific machine-code mapping;
+- API commands or recovery mutations;
+- authorization decisions;
+- business audit history;
+- notification inbox/persistence.
+
+Forms and collections keep their more specific interaction contracts and may compose this feedback vocabulary where appropriate.
+
+The feedback contract is documented in:
+
+```text
+docs/product/feedback-and-state-patterns.md
 ```
 
 ## Data access

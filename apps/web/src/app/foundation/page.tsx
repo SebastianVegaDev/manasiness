@@ -6,6 +6,7 @@ import { getTranslations } from '../../platform/i18n/server';
 import styles from '../page.module.css';
 import { PrimitiveDiagnostics } from '../primitive-diagnostics';
 import { CollectionPatternFixture } from './collection-pattern-fixture';
+import { FeedbackPatternFixture } from './feedback-pattern-fixture';
 import { FormPatternFixture } from './form-pattern-fixture';
 
 export default async function EngineeringFoundationPage() {
@@ -40,6 +41,8 @@ export default async function EngineeringFoundationPage() {
                 <Suspense fallback={null}>
                     <CollectionPatternFixture />
                 </Suspense>
+
+                <FeedbackPatternFixture />
 
                 <div className={styles['health']}>
                     <ApiReadinessStatus />

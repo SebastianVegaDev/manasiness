@@ -14,8 +14,9 @@ Use the smallest document set relevant to the work.
 | [`ui-primitives.md`](ui-primitives.md) | M2 reusable UI primitive ownership, API conventions, accessibility behavior, native/headless dependency boundary, and testing expectations. |
 | [`localization-and-copy.md`](localization-and-copy.md) | M2 UI-locale resolution, message ownership, presentation-formatting boundaries, and product copy/microcopy conventions. |
 | [`application-shell.md`](application-shell.md) | M2 application-shell ownership, route composition, responsive navigation, page-layout primitives, and M3 extension points. |
-| [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) | M2 form-state strategy, validation layers, accessible field composition, structured API-error mapping, mutation behavior, destructive confirmation, and unsaved-change policy. |
+| [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) | M2 form-state strategy, validation layers, accessible field composition, form-specific structured API-error mapping, mutation behavior, and unsaved-change policy. |
 | [`collection-and-data-display-patterns.md`](collection-and-data-display-patterns.md) | M2 collection composition, search/filter URL state, pagination presentation, semantic/compact data display, and collection-specific loading/absence/error states. |
+| [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) | M2 product-wide feedback channels, generic async/empty/error states, transient notifications, broad failure treatment, consequential confirmation, and accessibility rules. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -75,7 +76,6 @@ Read [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) before cha
 - field validation/error wiring;
 - mutation pending/retry behavior;
 - structured API-error handling in forms;
-- destructive confirmation behavior;
 - unsaved-change protection;
 - shared form infrastructure under `platform/forms`.
 
@@ -88,6 +88,17 @@ Read [`collection-and-data-display-patterns.md`](collection-and-data-display-pat
 - collection loading, refresh, empty, zero-result, error, or unavailable states;
 - reusable collection infrastructure under `platform/collections`;
 - the decision boundary for bulk selection or a headless table dependency.
+
+Read [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) before changing:
+
+- product-wide inline alert or banner behavior;
+- transient toast/notification behavior;
+- generic page/section loading, empty, no-history, not-configured, unavailable, or error states;
+- broad API/client failure treatment;
+- request-ID presentation;
+- consequential/destructive confirmation behavior;
+- live-region and feedback focus behavior;
+- reusable feedback infrastructure under `platform/feedback`.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

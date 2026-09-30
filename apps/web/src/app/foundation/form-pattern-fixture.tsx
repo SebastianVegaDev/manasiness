@@ -11,15 +11,15 @@ import {
 import { z } from 'zod';
 
 import { ApiResponseError } from '../../platform/api/api-client-error';
+import { DestructiveConfirmationDialog } from '../../platform/feedback';
 import {
-    DestructiveConfirmationDialog,
     FormErrorSummary,
     FormField,
     focusFirstInvalidControl,
     mapFormSubmissionError,
     type FormSubmissionFailure,
 } from '../../platform/forms';
-import { useTranslations } from '../../platform/i18n/localization-provider';
+import { useLocale, useTranslations } from '../../platform/i18n/localization-provider';
 import type { Translator } from '../../platform/i18n/translator';
 import { Button, Checkbox, Input, Select } from '../../platform/ui';
 import styles from './form-pattern-fixture.module.css';
@@ -29,6 +29,11 @@ const fixtureSchema = z.object({
     outcome: z.enum(['success', 'rejection']),
     acknowledged: z.literal(true),
 });
+
+const CONSEQUENCE_KIND_LABELS = {
+    'en-US': 'Irreversible',
+    'es-PE': 'Irreversible',
+} as const;
 
 type NameError = 'required' | 'too_short';
 type AcknowledgementError = 'required';
@@ -125,6 +130,7 @@ async function submitFixture(
 
 export function FormPatternFixture() {
     const t = useTranslations('diagnostics.forms');
+    const locale = useLocale();
     const formRef = useRef<HTMLFormElement>(null);
     const submissionLockRef = useRef(false);
     const [state, dispatchSubmission, isPending] = useActionState(submitFixture, INITIAL_STATE);
@@ -284,6 +290,8 @@ export function FormPatternFixture() {
                 title={t('destructive.title')}
                 description={t('destructive.description')}
                 consequence={t('destructive.consequence')}
+                consequenceKind="irreversible"
+                consequenceLabel={CONSEQUENCE_KIND_LABELS[locale]}
                 confirmLabel={t('destructive.confirm')}
                 cancelLabel={t('destructive.cancel')}
                 closeLabel={t('destructive.close')}

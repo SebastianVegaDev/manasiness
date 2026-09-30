@@ -1,10 +1,27 @@
 # Manasiness Web
 
-`@manasiness/web` is the Next.js web runtime for Manasiness.
+`@manasiness/web` is the Next.js product runtime for Manasiness.
 
-M1 establishes the engineering platform and the Web-to-API/server-state boundary.
+The current Web baseline combines two established layers:
 
-Product information architecture, branding, navigation, localization behavior, and reusable UI-system decisions remain later product responsibilities.
+```text
+M1 — Engineering Platform
+    Web/API transport, typed runtime configuration, TanStack Query wiring,
+    operational health integration, and repository quality gates
+
+M2 — Product Experience Foundation
+    information architecture, visual tokens/themes, localization,
+    reusable UI primitives, application shell, shared form/collection/
+    feedback patterns, accessibility/responsive gates, and visual regression
+```
+
+M3 owns authentication, Identity, Organizations, Membership, authorization, and the first real protected account/tenant flows. Later milestones own business-domain screens.
+
+For the complete M2 exit baseline, read:
+
+```text
+docs/product/m2-product-experience.md
+```
 
 ## Runtime
 
@@ -20,9 +37,11 @@ Zod
 TanStack Query
 ```
 
+The product styling layer uses semantic CSS custom properties plus CSS Modules. Reusable interactive primitives remain source-owned and native-first unless a real consumer justifies another dependency.
+
 ## Local development
 
-Create:
+Create the Web environment file:
 
 ```powershell
 Copy-Item apps/web/.env.example apps/web/.env
@@ -34,21 +53,145 @@ Start the API/PostgreSQL environment as needed and run:
 pnpm --filter @manasiness/web dev
 ```
 
-The default Web address is:
+Default addresses are:
 
 ```text
-http://localhost:3000
+Web  http://localhost:3000
+API  http://127.0.0.1:3001
 ```
 
-The default local API address is:
+## Source ownership
+
+The Web source tree is organized by responsibility:
 
 ```text
-http://127.0.0.1:3001
+src/
+    app/
+        # Next.js route composition
+
+    features/
+        # Product/business capabilities when their owning milestones implement them
+
+    platform/
+        api/
+            # Shared HTTP transport boundary
+
+        collections/
+            # Domain-neutral collection composition and URL-state helpers
+
+        environment/
+            # Typed browser/server runtime configuration
+
+        feedback/
+            # Domain-neutral alerts, generic states, toasts, confirmations
+
+        forms/
+            # Domain-neutral form/error/submission composition
+
+        health/
+            # Operational Web/API integration
+
+        i18n/
+            # Presentation locale, messages, formatting
+
+        query/
+            # TanStack Query platform wiring
+
+        shell/
+            # Application shell and reusable page composition
+
+        styling/
+            # Semantic visual tokens
+
+        theme/
+            # Presentation-theme initialization
+
+        ui/
+            # Domain-neutral UI primitives
 ```
+
+`platform/` is technical/product-experience infrastructure. It must not become a generic location for business rules.
+
+Do not create unowned dumping grounds such as:
+
+```text
+components/
+common/
+utils/
+helpers/
+```
+
+Reuse follows responsibility.
+
+## Product-experience source of truth
+
+M2 product contracts live under:
+
+```text
+docs/product/
+```
+
+The main documents are:
+
+```text
+product-experience.md
+visual-foundation.md
+ui-primitives.md
+localization-and-copy.md
+application-shell.md
+form-and-mutation-patterns.md
+collection-and-data-display-patterns.md
+feedback-and-state-patterns.md
+accessibility-and-responsive-quality.md
+visual-regression.md
+m2-product-experience.md
+```
+
+Read the owning document before changing a shared product-experience boundary.
+
+## Current routes
+
+M2 establishes the shell and engineering fixtures without inventing later business screens:
+
+```text
+/
+/app/[organizationId]
+/app/[organizationId]/overview
+/foundation
+```
+
+`/app/[organizationId]` redirects to the Organization-scoped Overview route.
+
+The Organization ID preserves route context but is not authorization proof. M3 must resolve the authenticated Identity/Membership and validate access to the Organization named by the URL.
+
+`/foundation` is an engineering-only fixture for reusable patterns and browser quality gates. It is not product navigation.
+
+Unimplemented business areas may appear as explicitly unavailable navigation items so the information architecture can be evaluated, but they must not link to fake CRUD/product screens.
+
+## Application shell and M3 seams
+
+The shell is owned by:
+
+```text
+src/platform/shell/
+```
+
+It owns application chrome, responsive navigation, current-location presentation, page-layout composition, and stable presentation seams.
+
+It does not own sessions, Membership, authorization, Organization persistence, or feature business state.
+
+M3 should compose real authenticated controls into the existing seams:
+
+```text
+data-shell-slot="organization-switcher"
+data-shell-slot="identity-account-menu"
+```
+
+Navigation visibility may later reflect Membership/permission results for usability, but authorization remains an API/application responsibility.
 
 ## Web-to-API boundary
 
-Feature and UI code must not establish its own HTTP conventions.
+Feature and UI code must not establish independent HTTP conventions.
 
 The reusable transport boundary lives under:
 
@@ -59,7 +202,7 @@ src/platform/api/
 The direction is:
 
 ```text
-component / feature
+route / component / feature
         ↓
 feature query or command
         ↓
@@ -67,7 +210,7 @@ API client
         ↓
 shared transport contract
         ↓
-NestJS API
+NestJS API/application capability
 ```
 
 Avoid:
@@ -79,22 +222,21 @@ component
 → custom error parsing
 ```
 
-A direct `fetch()` is acceptable only inside the transport boundary or for a deliberately exceptional framework/infrastructure use case.
+A direct `fetch()` is acceptable only inside the owned transport boundary or for a deliberately exceptional framework/infrastructure requirement.
 
 ## API client responsibilities
 
-The API client owns cross-cutting transport behavior:
+The API client owns cross-cutting transport behavior such as:
 
 ```text
 base-origin resolution
 relative path resolution
-JSON serialization
-JSON decoding
+JSON serialization/decoding
 request timeout
 AbortSignal propagation
 credential behavior
 request headers
-structured API error decoding
+structured API-error decoding
 response-contract validation
 request correlation extraction
 ```
@@ -105,162 +247,66 @@ It does not own:
 business rules
 authorization decisions
 domain state transitions
-feature-specific cache invalidation
+feature-specific invalidation
 UI rendering
 ```
 
 ## Shared transport contracts
 
-Transport schemas that are shared between API and Web belong to:
+Transport schemas legitimately shared between API and Web belong to:
 
 ```text
 @manasiness/contracts
 ```
 
-Examples include:
+The same canonical runtime schema should provide both validation and TypeScript inference.
+
+Do not duplicate a wire contract as an unrelated TypeScript interface when the shared runtime schema already owns it.
+
+A successful HTTP status does not make an arbitrary payload trusted. Web clients validate the expected response contract.
+
+## API failures
+
+The Web distinguishes:
 
 ```text
-API errors
-entity transport IDs
-operational health responses
-future feature request/response contracts
+ApiResponseError
+    API returned a structured non-success response
+
+ApiProtocolError
+    response did not satisfy the expected transport protocol/schema
+
+ApiTransportError
+    request could not complete, for example network failure or timeout
 ```
 
-The Web should not recreate an API response interface when a canonical runtime schema already exists.
-
-The same schema provides:
+Control flow uses stable machine-readable values such as:
 
 ```text
-runtime validation
-+
-TypeScript inference
-```
-
-A successful HTTP status does not mean the payload should be blindly trusted.
-
-The Web validates the response against the expected shared schema.
-
-## API errors
-
-The canonical API failure envelope is:
-
-```json
-{
-    "error": {
-        "type": "conflict",
-        "code": "resource.conflict",
-        "message": "The resource conflicts with existing state."
-    }
-}
-```
-
-Web behavior branches on stable values such as:
-
-```text
-status
+HTTP status
 error.type
 error.code
 ```
 
-Never use human-readable messages as control flow.
+Human-readable error messages are presentation/debug text and must not be parsed as protocol identifiers.
 
-Do not write:
-
-```typescript
-if (error.message.includes('already exists')) {
-    // ...
-}
-```
-
-Messages are presentation/debug text, not protocol identifiers.
-
-## Failure categories
-
-The Web distinguishes three broad client failures.
-
-### API response failure
-
-The API returned a non-success HTTP result using the shared API error contract.
-
-Represented by:
-
-```text
-ApiResponseError
-```
-
-It contains:
-
-```text
-HTTP status
-X-Request-ID when available
-shared ApiError
-```
-
-### Protocol failure
-
-The server response did not satisfy the transport protocol expected by the client.
-
-Examples:
-
-```text
-invalid JSON
-successful response with an invalid shape
-non-success response outside the shared error envelope
-```
-
-Represented by:
-
-```text
-ApiProtocolError
-```
-
-### Transport failure
-
-The request could not complete.
-
-Examples:
-
-```text
-network failure
-timeout
-```
-
-Represented by:
-
-```text
-ApiTransportError
-```
-
-External query cancellation is preserved rather than converted into an ordinary retryable network failure.
+Request IDs are diagnostic context, not authentication, tenant context, Identity, or idempotency proof.
 
 ## Timeouts and cancellation
 
-Every API request has a bounded timeout.
-
-The default transport timeout is:
+Every API request has a bounded timeout. The default transport timeout is:
 
 ```text
 10000 ms
 ```
 
-A capability may select a narrower value when appropriate.
+TanStack Query supplies an `AbortSignal` to browser query functions. That signal must propagate through the API client to `fetch`.
 
-TanStack Query supplies an `AbortSignal` to each query function.
-
-That signal must be passed to the API client:
-
-```text
-TanStack Query
-→ AbortSignal
-→ API client
-→ fetch
-```
-
-Do not create data-fetching hooks that silently discard cancellation.
+External query cancellation remains cancellation rather than being converted into an ordinary retryable transport failure.
 
 ## URL safety
 
-The API client accepts application-relative paths such as:
+The API client accepts application-relative backend paths, for example:
 
 ```text
 /health/ready
@@ -268,15 +314,7 @@ The API client accepts application-relative paths such as:
 /sales/<id>?include=lines
 ```
 
-It rejects paths that can replace the configured origin, such as:
-
-```text
-//other-host.example/path
-```
-
-Feature code does not construct arbitrary absolute backend URLs.
-
-The configured API origin remains authoritative.
+Feature code does not construct arbitrary absolute backend URLs. Paths capable of replacing the configured origin are rejected by the shared client boundary.
 
 ## Browser API client
 
@@ -292,15 +330,7 @@ through:
 browserApiClient
 ```
 
-The browser client uses:
-
-```text
-credentials: include
-```
-
-so the transport layer is compatible with the future cookie-based session model.
-
-Issue #36 does not implement authentication or sessions.
+Browser transport uses `credentials: include` so the boundary can support the future cookie-based session model without M2 inventing sessions.
 
 ## Server API client
 
@@ -316,208 +346,29 @@ through:
 createServerApiClient()
 ```
 
-The server origin may differ from the browser origin.
-
-For example:
-
-```text
-WEB_API_ORIGIN=http://api.internal:3001
-NEXT_PUBLIC_API_ORIGIN=https://api.example.com
-```
+The server origin may differ from the public browser origin.
 
 `WEB_API_ORIGIN` is server-only and must never enter browser JavaScript.
 
-## Server request context
-
-The server client does not automatically forward every header received by Next.js.
-
-When a future request-bound server operation needs a session cookie, the caller explicitly supplies the cookie header.
-
-Conceptually:
-
-```typescript
-const incomingHeaders = await headers();
-
-const api = createServerApiClient({
-    cookieHeader: incomingHeaders.get('cookie') ?? undefined,
-});
-```
-
-This makes propagation visible.
-
-Do not blindly forward:
-
-```text
-all request headers
-proxy headers
-Host
-Authorization
-internal infrastructure headers
-```
-
-across service boundaries.
+A future authenticated Server Component that needs request-bound session context should explicitly supply only the required cookie/request information to the server API client. Do not blindly forward all incoming headers, proxy headers, `Host`, or unrelated authorization material across service boundaries.
 
 ## Configuration boundaries
 
-There are two configuration surfaces.
-
-### Server-only
-
-```text
-APP_ENV
-WEB_API_ORIGIN
-```
-
-Owned by:
+Server-only runtime configuration is owned by:
 
 ```text
 src/platform/environment/server-environment.ts
 ```
 
-The server module imports:
+Browser-safe build configuration is explicitly allowlisted through `NEXT_PUBLIC_*` values.
 
-```typescript
-import 'server-only';
-```
+Anything under `NEXT_PUBLIC_*` is public and must never contain secrets, private service addresses, credentials, database information, or server tokens.
 
-### Browser-safe
-
-```text
-NEXT_PUBLIC_API_ORIGIN
-```
-
-Anything under `NEXT_PUBLIC_*` must be considered public because Next.js includes it in browser output.
-
-It must never contain:
-
-```text
-credentials
-secret tokens
-private service addresses
-database information
-```
-
-Feature code must not read arbitrary environment variables directly.
+Feature code must not scatter direct `process.env` access.
 
 ## TanStack Query
 
-TanStack Query owns browser-side server state.
-
-Examples of server state include:
-
-```text
-sales returned by the API
-current inventory availability
-customer records
-server-side search results
-```
-
-Do not introduce another global-state library merely to store the same remote state.
-
-TanStack Query cache is not canonical business state.
-
-Canonical business state remains owned by the backend/domain.
-
-## QueryClient
-
-The root Web application provides one browser QueryClient through:
-
-```text
-QueryProvider
-```
-
-On the server, QueryClient instances are not shared globally between requests.
-
-This prevents request data from leaking between users.
-
-## Query keys
-
-Query keys belong with the capability that owns the query.
-
-Use hierarchical, deterministic values.
-
-Example:
-
-```typescript
-['sales', 'detail', saleId];
-```
-
-or:
-
-```typescript
-['inventory', 'availability', warehouseId, productId];
-```
-
-Platform-level keys use the same rule:
-
-```typescript
-['platform', 'health', 'readiness'];
-```
-
-Avoid one giant global file containing every future query key.
-
-Keep query definitions close to their capability.
-
-Query-key values must be stable and serializable.
-
-## Invalidation ownership
-
-The mutation/application capability that knows what became stale owns invalidation.
-
-For example:
-
-```text
-confirm sale
-        ↓
-mutation succeeds
-        ↓
-invalidate affected sale
-invalidate affected inventory views
-```
-
-A page component should not need detailed knowledge about all caches affected by a business command.
-
-Do not solve invalidation by routinely clearing the entire QueryClient.
-
-## Query retries
-
-Queries automatically retry only failures that may reasonably recover:
-
-```text
-network failures
-timeouts
-HTTP 408
-HTTP 429
-HTTP 5xx
-```
-
-Stable 4xx application/client failures are not blindly retried.
-
-Protocol/schema violations are not retried because another immediate request is unlikely to repair an incompatible contract.
-
-Mutations do not retry automatically by default.
-
-A future use case may opt into retry only when its operation semantics make that safe.
-
-## Server-side data access
-
-Prefer direct server-side API access when data is needed to render a Server Component and does not require browser-driven lifecycle behavior.
-
-Conceptually:
-
-```text
-Server Component
-→ serverApiClient
-→ Nest API
-```
-
-Do not introduce TanStack Query solely because every API call must supposedly use a browser hook.
-
-Server Components are already a server data-fetching boundary.
-
-## Browser-side queries
-
-Prefer TanStack Query when data needs browser-managed server-state behavior such as:
+TanStack Query owns browser-managed server-state lifecycle such as:
 
 ```text
 refetching
@@ -529,27 +380,51 @@ mutation invalidation
 browser lifecycle
 ```
 
-## Server prefetch and hydration
+It is not canonical business state.
 
-Future product screens may prefetch through a server QueryClient and hydrate that state into the browser when doing so avoids request waterfalls or improves user experience.
+Canonical business state remains owned by backend/domain/application capabilities.
 
-That should use TanStack Query's normal:
+Do not introduce another global state library merely to copy the same remote data.
 
-```text
-QueryClient
-dehydrate
-HydrationBoundary
-```
+### QueryClient
 
-flow.
+The browser application uses the established `QueryProvider` boundary.
 
-Issue #36 does not add speculative prefetching for the technical landing page.
+Server QueryClient instances must not be shared globally across requests.
+
+### Query keys
+
+Query keys belong with their owning capability and remain hierarchical, deterministic, stable, and serializable.
+
+Do not create one giant global query-key file for every future feature.
+
+### Invalidation
+
+The mutation/application capability that knows what became stale owns invalidation.
+
+A page component should not need detailed knowledge of every cache affected by a business command.
+
+Do not routinely clear the entire QueryClient as an invalidation strategy.
+
+### Retry policy
+
+Queries retry only failures that may reasonably recover, such as transport failures, timeouts, HTTP 408/429, and selected 5xx responses.
+
+Stable application/client failures and protocol/schema violations are not blindly retried.
+
+Mutations do not retry automatically unless the owning operation explicitly proves retry is safe.
+
+## Server and browser data access
+
+Prefer direct server-side API access when a Server Component only needs data to render.
+
+Use TanStack Query when browser-managed remote-state lifecycle is genuinely required.
+
+Future server prefetch/hydration may use the standard QueryClient/dehydrate/HydrationBoundary flow when it solves a real waterfall or experience problem. It is not mandatory for every request.
 
 ## Mutations
 
-Future mutations belong with the feature/application capability that owns them.
-
-They should use:
+Future feature mutations belong with their owning feature/application capability and should compose:
 
 ```text
 API client
@@ -561,39 +436,23 @@ TanStack mutation
 explicit invalidation
 ```
 
-Do not put business rules into mutation hooks.
-
-The API/domain remains authoritative.
+Mutation hooks do not become a second business-rule layer.
 
 ## Next.js Route Handlers
 
-Do not create a duplicate API inside Next.js merely because App Router supports:
+Do not create a duplicate API inside `app/api/*` merely because App Router supports Route Handlers.
 
-```text
-app/api/*
-```
+A Route Handler/proxy is appropriate only when it creates a real boundary, for example:
 
-A Route Handler or proxy is appropriate only when it provides a real boundary, for example:
+- protecting server-only credentials;
+- same-origin cookie/session translation;
+- webhook termination;
+- access to a browser-inaccessible internal service;
+- framework-specific protocol adaptation.
 
-```text
-protecting server-only credentials
-same-origin session/cookie translation
-webhook termination
-browser-inaccessible internal service access
-framework-specific protocol adaptation
-```
+It is not a mandatory browser → Next.js → NestJS hop when the browser can safely use the Nest API directly.
 
-It is not appropriate simply to transform:
-
-```text
-browser
-→ Next route handler
-→ Nest route
-```
-
-when the browser can safely use the Nest API directly.
-
-## PostgreSQL
+## PostgreSQL and NestJS boundaries
 
 The Web never imports:
 
@@ -601,11 +460,7 @@ The Web never imports:
 @manasiness/database
 ```
 
-and never connects to PostgreSQL.
-
-The Web consumes backend capabilities through transport/application boundaries.
-
-## NestJS
+and never connects directly to PostgreSQL.
 
 The Web may import:
 
@@ -619,20 +474,19 @@ It must not import implementation modules from:
 apps/api
 Nest controllers
 Nest services
+backend repositories
 database adapters
 ```
 
-Transport contracts are deliberately separate from backend implementation.
+## Operational health
 
-## Operational smoke query
-
-M1 includes one browser query:
+The M1 readiness query remains:
 
 ```text
 GET /health/ready
 ```
 
-Its purpose is to prove:
+It proves the platform path:
 
 ```text
 Next browser runtime
@@ -644,55 +498,84 @@ Next browser runtime
 → shared transport schema
 ```
 
-This is platform validation.
+This is operational/platform validation, not a product feature. Its engineering presentation belongs on `/foundation`, not in product navigation.
 
-It is not a product feature.
+## Styling and theme
 
-## Source layout
-
-```text
-src/
-    app/
-        # Next.js route composition
-
-    features/
-        # Future product-facing capabilities
-
-    platform/
-        api/
-            # Shared HTTP transport boundary
-
-        environment/
-            # Typed browser/server configuration
-
-        health/
-            # Operational Web/API integration
-
-        query/
-            # TanStack Query platform wiring
-```
-
-`platform/` must remain technical infrastructure.
-
-Do not move product-specific API operations into `platform/api/`.
-
-For example:
+Semantic application-level tokens live under:
 
 ```text
-platform/api/api-client.ts
+src/platform/styling/
 ```
 
-is correct.
-
-But a future:
+The Web uses:
 
 ```text
-getSales()
-confirmSale()
-searchCustomers()
+semantic CSS custom properties
++
+global reset/base rules
++
+CSS Modules
 ```
 
-belongs with its owning feature/application capability.
+Theme preference supports:
+
+```text
+system
+light
+dark
+```
+
+and remains presentation state only.
+
+Do not infer theme from Organization, Membership, Identity authorization, currency, country, or timezone.
+
+## Localization and formatting
+
+Presentation-locale infrastructure lives under:
+
+```text
+src/platform/i18n/
+```
+
+M2 supports:
+
+```text
+en-US
+es-PE
+```
+
+with `en-US` fallback.
+
+UI locale does not participate in product route identity and does not own Organization currency/timezone or business formatting policy.
+
+Future feature copy remains feature-owned rather than turning the platform message catalog into a global dumping ground.
+
+## Reusable UI and shared patterns
+
+Domain-neutral reusable UI lives under explicit platform capabilities:
+
+```text
+platform/ui/
+platform/forms/
+platform/collections/
+platform/feedback/
+```
+
+These layers may own reusable interaction/composition semantics, but they do not own feature schemas, business validation meaning, business commands, authorization decisions, or domain-specific status vocabulary.
+
+## Accessibility, responsive, and visual quality
+
+Shared M2 surfaces are protected through Browser E2E accessibility/responsive checks and deterministic visual regression.
+
+Canonical guidance lives in:
+
+```text
+docs/product/accessibility-and-responsive-quality.md
+docs/product/visual-regression.md
+```
+
+The `/foundation` route supplies product-neutral engineering fixtures for shared-pattern validation. New real product screens still require feature-level accessibility/responsive review.
 
 ## Commands
 
@@ -702,50 +585,53 @@ Development:
 pnpm --filter @manasiness/web dev
 ```
 
-Build:
+Web build/type/lint/unit tests:
 
 ```powershell
 pnpm --filter @manasiness/web build
-```
-
-Typecheck:
-
-```powershell
 pnpm --filter @manasiness/web typecheck
-```
-
-Lint:
-
-```powershell
 pnpm --filter @manasiness/web lint
-```
-
-Unit tests:
-
-```powershell
 pnpm --filter @manasiness/web test
 ```
 
-Integrated browser test:
+Portable functional Browser E2E:
 
 ```powershell
 pnpm test:e2e
 ```
 
-## UI scope
+Canonical Linux visual comparison:
 
-Issue #36 still does not establish:
-
-```text
-Tailwind
-shadcn/ui
-brand assets
-theme tokens
-navigation architecture
-dashboard layout
-authentication screens
-component library
-product CRUD screens
+```powershell
+pnpm test:visual
 ```
 
-Those remain later product/UI responsibilities.
+Intentional canonical visual-baseline update on the supported Linux environment:
+
+```powershell
+pnpm test:visual:update
+```
+
+The repository `Browser E2E` CI gate runs the functional and canonical visual projects together.
+
+## Current scope and deferrals
+
+M2 establishes shared product infrastructure, not the business application itself.
+
+Still intentionally deferred are:
+
+```text
+authentication / sessions
+Identity registration / recovery / account behavior
+Organization persistence / creation / selection / real switching
+Membership / permissions / authorization
+Parties and relationship business screens
+Sales / Purchasing / Catalog / Inventory business screens
+Finance / Workforce / Reporting / Assistant business screens
+marketing-site design
+production deployment hardening
+```
+
+Do not fill those gaps with fake data, fake routes, placeholder authorization, or speculative domain components merely to make the shell look complete.
+
+M3 should extend the established shell, transport, localization, theme, UI, and route seams rather than rebuilding them.

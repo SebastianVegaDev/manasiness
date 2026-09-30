@@ -1,4 +1,4 @@
-# ADR 0014 — Native CSS tokens and scoped Web styling
+# ADR 0017 — Native CSS tokens and scoped Web styling
 
 > **Status:** Accepted  
 > **Date:** 2026-09-29

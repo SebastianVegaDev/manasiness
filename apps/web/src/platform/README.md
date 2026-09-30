@@ -98,7 +98,7 @@ Theme state is presentation state only. It must not become Organization configur
 The durable styling/theme rationale is recorded in:
 
 ```text
-docs/adr/0014-web-styling-and-theme-foundation.md
+docs/adr/0017-web-styling-and-theme-foundation.md
 ```
 
 Product visual guidance lives in:

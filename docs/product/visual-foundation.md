@@ -89,7 +89,7 @@ global reset/base rules
 CSS Modules for page/component-local composition
 ```
 
-The architectural rationale is recorded in [`../adr/0014-web-styling-and-theme-foundation.md`](../adr/0014-web-styling-and-theme-foundation.md).
+The architectural rationale is recorded in [`../adr/0017-web-styling-and-theme-foundation.md`](../adr/0017-web-styling-and-theme-foundation.md).
 
 Tailwind and a CSS-in-JS runtime are not part of the M2 foundation.
 

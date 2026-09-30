@@ -14,6 +14,7 @@ Use the smallest document set relevant to the work.
 | [`ui-primitives.md`](ui-primitives.md) | M2 reusable UI primitive ownership, API conventions, accessibility behavior, native/headless dependency boundary, and testing expectations. |
 | [`localization-and-copy.md`](localization-and-copy.md) | M2 UI-locale resolution, message ownership, presentation-formatting boundaries, and product copy/microcopy conventions. |
 | [`application-shell.md`](application-shell.md) | M2 application-shell ownership, route composition, responsive navigation, page-layout primitives, and M3 extension points. |
+| [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) | M2 form-state strategy, validation layers, accessible field composition, structured API-error mapping, mutation behavior, destructive confirmation, and unsaved-change policy. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -66,6 +67,16 @@ Read [`application-shell.md`](application-shell.md) before changing:
 - working versus unavailable navigation behavior;
 - Organization/Identity shell extension points;
 - M3 route/authentication handoff seams.
+
+Read [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) before changing:
+
+- form-state or submission strategy;
+- field validation/error wiring;
+- mutation pending/retry behavior;
+- structured API-error handling in forms;
+- destructive confirmation behavior;
+- unsaved-change protection;
+- shared form infrastructure under `platform/forms`.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

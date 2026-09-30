@@ -4,6 +4,7 @@ import { ApiReadinessStatus } from '../../platform/health/api-readiness-status';
 import { getTranslations } from '../../platform/i18n/server';
 import styles from '../page.module.css';
 import { PrimitiveDiagnostics } from '../primitive-diagnostics';
+import { FormPatternFixture } from './form-pattern-fixture';
 
 export default async function EngineeringFoundationPage() {
     const t = await getTranslations('landing');
@@ -31,6 +32,8 @@ export default async function EngineeringFoundationPage() {
                 </div>
 
                 <PrimitiveDiagnostics />
+
+                <FormPatternFixture />
 
                 <div className={styles['health']}>
                     <ApiReadinessStatus />

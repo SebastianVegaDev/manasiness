@@ -84,6 +84,60 @@ const enUSMessages = {
         },
     },
     diagnostics: {
+        forms: {
+            kicker: 'Form interaction foundation',
+            title: 'Validation and mutation behavior is explicit.',
+            description:
+                'This engineering-only fixture proves reusable field wiring, recoverable validation, pending state, structured API rejection, and consequential confirmation without inventing a business form.',
+            required: 'Required',
+            optional: 'Optional',
+            name: {
+                label: 'Fixture name',
+                description:
+                    'Enter at least three characters. Recoverable failures keep this value.',
+            },
+            outcome: {
+                label: 'Simulated response',
+                description: 'Choose a successful mutation or a structured business rejection.',
+                success: 'Success',
+                rejection: 'Business rejection',
+            },
+            acknowledgement: {
+                label: 'I understand this is an engineering fixture.',
+                description: 'This required checkbox exercises boolean-control validation wiring.',
+            },
+            validation: {
+                nameRequired: 'Enter a fixture name.',
+                nameTooShort: 'Use at least three characters.',
+                acknowledgementRequired: 'Confirm that this is an engineering fixture.',
+            },
+            failure: {
+                title: 'The submission was not accepted.',
+                requestId: 'Request ID:',
+                businessRejection:
+                    'The simulated API rejected the operation. The copy is selected from its machine code, not by parsing the API message.',
+                conflict: 'The current server state conflicts with this operation.',
+                api: 'The API rejected this operation.',
+                timeout: 'The request timed out. Review the current state before trying again.',
+                network: 'The request could not reach the API.',
+                protocol: 'The API response did not match the expected transport contract.',
+                unexpected: 'An unexpected error prevented the operation.',
+            },
+            success: 'Submission accepted. Successful submissions: {count}.',
+            submit: 'Submit fixture',
+            submitting: 'Submitting fixture…',
+            destructive: {
+                open: 'Open consequential confirmation',
+                title: 'Remove fixture evidence',
+                description: 'Confirm the exact consequential action.',
+                consequence:
+                    'This demonstration removes only the local confirmation state. It does not delete product or business data.',
+                confirm: 'Remove fixture evidence',
+                cancel: 'Keep fixture evidence',
+                close: 'Close confirmation',
+                completed: 'Consequential confirmation completed.',
+            },
+        },
         primitives: {
             kicker: 'Interaction foundation',
             title: 'Shared UI primitives are active.',
@@ -203,6 +257,63 @@ const esPEMessages = {
         },
     },
     diagnostics: {
+        forms: {
+            kicker: 'Base de interacción de formularios',
+            title: 'La validación y las mutaciones tienen un comportamiento explícito.',
+            description:
+                'Esta fixture exclusiva de ingeniería demuestra composición accesible de campos, validación recuperable, estado pendiente, rechazo estructurado de API y confirmación de acciones con consecuencias sin inventar un formulario de negocio.',
+            required: 'Obligatorio',
+            optional: 'Opcional',
+            name: {
+                label: 'Nombre de la fixture',
+                description:
+                    'Ingresa al menos tres caracteres. Los errores recuperables conservan este valor.',
+            },
+            outcome: {
+                label: 'Respuesta simulada',
+                description: 'Elige una mutación exitosa o un rechazo de negocio estructurado.',
+                success: 'Éxito',
+                rejection: 'Rechazo de negocio',
+            },
+            acknowledgement: {
+                label: 'Entiendo que esta es una fixture de ingeniería.',
+                description:
+                    'Este checkbox obligatorio ejercita la validación de controles booleanos.',
+            },
+            validation: {
+                nameRequired: 'Ingresa un nombre para la fixture.',
+                nameTooShort: 'Usa al menos tres caracteres.',
+                acknowledgementRequired: 'Confirma que esta es una fixture de ingeniería.',
+            },
+            failure: {
+                title: 'El envío no fue aceptado.',
+                requestId: 'ID de solicitud:',
+                businessRejection:
+                    'La API simulada rechazó la operación. El texto se selecciona por su código de máquina, no interpretando el mensaje de la API.',
+                conflict: 'El estado actual del servidor entra en conflicto con esta operación.',
+                api: 'La API rechazó esta operación.',
+                timeout:
+                    'La solicitud agotó el tiempo. Revisa el estado actual antes de volver a intentar.',
+                network: 'La solicitud no pudo comunicarse con la API.',
+                protocol:
+                    'La respuesta de la API no coincide con el contrato de transporte esperado.',
+                unexpected: 'Un error inesperado impidió la operación.',
+            },
+            success: 'Envío aceptado. Envíos exitosos: {count}.',
+            submit: 'Enviar fixture',
+            submitting: 'Enviando fixture…',
+            destructive: {
+                open: 'Abrir confirmación de acción con consecuencias',
+                title: 'Eliminar evidencia de la fixture',
+                description: 'Confirma la acción exacta y su consecuencia.',
+                consequence:
+                    'Esta demostración elimina únicamente el estado local de confirmación. No elimina datos del producto ni del negocio.',
+                confirm: 'Eliminar evidencia de la fixture',
+                cancel: 'Conservar evidencia de la fixture',
+                close: 'Cerrar confirmación',
+                completed: 'Confirmación de acción con consecuencias completada.',
+            },
+        },
         primitives: {
             kicker: 'Base de interacción',
             title: 'Los componentes de interfaz compartidos están activos.',

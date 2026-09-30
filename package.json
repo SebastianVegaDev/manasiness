@@ -40,6 +40,7 @@
         "db:validate": "pnpm --filter @manasiness/database db:validate"
     },
     "devDependencies": {
+        "@axe-core/playwright": "4.13.0",
         "@manasiness/eslint-config": "workspace:*",
         "@playwright/test": "1.63.0",
         "@types/node": "24.13.6",

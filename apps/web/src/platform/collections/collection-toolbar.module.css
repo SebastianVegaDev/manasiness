@@ -1,0 +1,32 @@
+.toolbar {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-muted);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+}
+
+.status {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+}
+
+@media (min-width: 64rem) {
+    .toolbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+    }
+
+    .status {
+        justify-self: end;
+        text-align: end;
+    }
+}

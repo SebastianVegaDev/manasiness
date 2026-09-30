@@ -1,9 +1,11 @@
 import Image from 'next/image';
+import { Suspense } from 'react';
 
 import { ApiReadinessStatus } from '../../platform/health/api-readiness-status';
 import { getTranslations } from '../../platform/i18n/server';
 import styles from '../page.module.css';
 import { PrimitiveDiagnostics } from '../primitive-diagnostics';
+import { CollectionPatternFixture } from './collection-pattern-fixture';
 import { FormPatternFixture } from './form-pattern-fixture';
 
 export default async function EngineeringFoundationPage() {
@@ -34,6 +36,10 @@ export default async function EngineeringFoundationPage() {
                 <PrimitiveDiagnostics />
 
                 <FormPatternFixture />
+
+                <Suspense fallback={null}>
+                    <CollectionPatternFixture />
+                </Suspense>
 
                 <div className={styles['health']}>
                     <ApiReadinessStatus />

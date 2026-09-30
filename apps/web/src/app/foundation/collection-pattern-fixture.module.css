@@ -1,0 +1,136 @@
+.section {
+    display: grid;
+    gap: var(--space-5);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+}
+
+.heading {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.kicker,
+.title,
+.description {
+    margin: 0;
+}
+
+.kicker {
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.title {
+    color: var(--color-foreground);
+    font-size: var(--font-size-xl);
+}
+
+.description {
+    max-width: 60rem;
+    color: var(--color-foreground-muted);
+    line-height: var(--line-height-relaxed);
+}
+
+.controlGrid {
+    display: grid;
+    width: 100%;
+    gap: var(--space-3);
+}
+
+.searchForm,
+.searchField {
+    min-width: 0;
+}
+
+.searchRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-2);
+}
+
+.resultStatus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.resultStatus strong {
+    color: var(--color-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.dataStack {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.compactHeading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.compactHeading > div {
+    display: grid;
+    min-width: 0;
+    gap: var(--space-1);
+}
+
+.compactHeading strong {
+    overflow-wrap: anywhere;
+}
+
+.compactHeading span {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+}
+
+.compactFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: var(--space-4) 0 0;
+}
+
+.compactFacts div {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.compactFacts dt {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+}
+
+.compactFacts dd {
+    margin: 0;
+    color: var(--color-foreground);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-medium);
+}
+
+@media (max-width: 40rem) {
+    .searchRow {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .searchRow input {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 64rem) {
+    .controlGrid {
+        grid-template-columns: minmax(20rem, 2fr) repeat(2, minmax(10rem, 1fr));
+        align-items: end;
+    }
+}

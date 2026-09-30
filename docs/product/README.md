@@ -15,6 +15,7 @@ Use the smallest document set relevant to the work.
 | [`localization-and-copy.md`](localization-and-copy.md) | M2 UI-locale resolution, message ownership, presentation-formatting boundaries, and product copy/microcopy conventions. |
 | [`application-shell.md`](application-shell.md) | M2 application-shell ownership, route composition, responsive navigation, page-layout primitives, and M3 extension points. |
 | [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) | M2 form-state strategy, validation layers, accessible field composition, structured API-error mapping, mutation behavior, destructive confirmation, and unsaved-change policy. |
+| [`collection-and-data-display-patterns.md`](collection-and-data-display-patterns.md) | M2 collection composition, search/filter URL state, pagination presentation, semantic/compact data display, and collection-specific loading/absence/error states. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -77,6 +78,16 @@ Read [`form-and-mutation-patterns.md`](form-and-mutation-patterns.md) before cha
 - destructive confirmation behavior;
 - unsaved-change protection;
 - shared form infrastructure under `platform/forms`.
+
+Read [`collection-and-data-display-patterns.md`](collection-and-data-display-patterns.md) before changing:
+
+- collection-page composition;
+- search/filter URL behavior;
+- collection pagination presentation;
+- table versus compact/mobile data presentation;
+- collection loading, refresh, empty, zero-result, error, or unavailable states;
+- reusable collection infrastructure under `platform/collections`;
+- the decision boundary for bulk selection or a headless table dependency.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

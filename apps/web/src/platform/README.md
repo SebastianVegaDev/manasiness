@@ -12,7 +12,8 @@ Examples include:
 - application-level styling tokens;
 - theme initialization;
 - localization and presentation formatting;
-- reusable domain-neutral UI primitives.
+- reusable domain-neutral UI primitives;
+- reusable domain-neutral form and collection composition.
 
 Platform code must not become a generic location for business behavior.
 
@@ -167,6 +168,50 @@ docs/adr/0015-native-first-web-ui-primitives.md
 ```
 
 Do not create generic `components`, `common`, or `utils` folders as an alternative ownership model.
+
+## Reusable form composition
+
+Domain-neutral form composition lives under:
+
+```text
+platform/forms/
+```
+
+This boundary coordinates accessible field/error relationships, generic submission/focus conventions, structured API-error classification, and consequential confirmation composition.
+
+It does not own feature schemas, business validation meaning, API commands, feature error copy, or post-success navigation.
+
+The form interaction contract is documented in:
+
+```text
+docs/product/form-and-mutation-patterns.md
+```
+
+## Reusable collection composition
+
+Domain-neutral collection composition lives under:
+
+```text
+platform/collections/
+```
+
+This boundary owns reusable collection toolbar layout, URL-state transformation helpers, pagination presentation, collection-specific loading/absence/error presentation, and semantic table/compact composition.
+
+It does not own:
+
+- feature records or query definitions;
+- search meaning;
+- filter vocabulary;
+- business columns/actions;
+- domain status meaning;
+- backend pagination semantics;
+- authorization or business availability.
+
+The collection interaction contract is documented in:
+
+```text
+docs/product/collection-and-data-display-patterns.md
+```
 
 ## Data access
 

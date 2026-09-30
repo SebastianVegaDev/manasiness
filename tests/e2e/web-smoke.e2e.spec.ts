@@ -133,6 +133,84 @@ test('engineering diagnostics remain available outside product navigation', asyn
     await expect(dialogTrigger).toBeFocused();
 });
 
+test('form foundation preserves recoverable input and coordinates validation, pending state, success, and confirmation', async ({
+    page,
+}) => {
+    await page.goto('/foundation');
+
+    const form = page.getByRole('form', {
+        name: 'Validation and mutation behavior is explicit.',
+    });
+    const nameInput = form.getByRole('textbox', { name: 'Fixture name' });
+    const acknowledgement = form.getByRole('checkbox', {
+        name: 'I understand this is an engineering fixture.',
+    });
+    const outcome = form.getByRole('combobox', { name: 'Simulated response' });
+    const submit = form.getByRole('button', { name: 'Submit fixture' });
+
+    await submit.click();
+    await expect(form).toHaveAttribute('aria-busy', 'true');
+    await expect(form.getByRole('button', { name: 'Submitting fixture…' })).toBeDisabled();
+
+    await expect(nameInput).toBeFocused();
+    await expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+    await expect(nameInput).toHaveAttribute('aria-errormessage', 'form-fixture-name-error');
+    await expect(page.getByText('Enter a fixture name.')).toBeVisible();
+    await expect(acknowledgement).toHaveAttribute('aria-invalid', 'true');
+    await expect(form).toHaveAttribute('data-submission-attempt', '1');
+
+    await nameInput.fill('Recoverable fixture');
+    await form.getByText('I understand this is an engineering fixture.', { exact: true }).click();
+    await expect(acknowledgement).toBeChecked();
+    await outcome.selectOption('rejection');
+    await submit.click();
+
+    const rejection = page.getByRole('alert').filter({
+        hasText: 'The submission was not accepted.',
+    });
+    await expect(rejection).toBeVisible();
+    await expect(rejection).toContainText('fixture-request-001');
+    await expect(rejection).toContainText(
+        'The simulated API rejected the operation. The copy is selected from its machine code',
+    );
+    await expect(nameInput).toHaveValue('Recoverable fixture');
+    await expect(acknowledgement).toBeChecked();
+    await expect(outcome).toHaveValue('rejection');
+    await expect(form).toHaveAttribute('data-submission-attempt', '2');
+
+    await outcome.selectOption('success');
+    await page.evaluate(`
+        const form = document.querySelector('[data-form-pattern-fixture]');
+        if (!(form instanceof HTMLFormElement)) throw new Error('Form fixture not found.');
+        form.requestSubmit();
+        form.requestSubmit();
+    `);
+
+    await expect(form.getByRole('button', { name: 'Submitting fixture…' })).toBeDisabled();
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Submission accepted.' }),
+    ).toContainText('Successful submissions: 1.');
+    await expect(form).toHaveAttribute('data-submission-attempt', '3');
+
+    const confirmationTrigger = form.getByRole('button', {
+        name: 'Open consequential confirmation',
+    });
+    await confirmationTrigger.click();
+
+    const confirmation = page.getByRole('alertdialog', { name: 'Remove fixture evidence' });
+    await expect(confirmation).toBeVisible();
+    await expect(confirmation).toContainText(
+        'This demonstration removes only the local confirmation state.',
+    );
+    await expect(page.getByRole('button', { name: 'Close confirmation' })).toBeFocused();
+
+    await confirmation.getByRole('button', { name: 'Remove fixture evidence' }).click();
+    await expect(confirmation).toBeHidden();
+    await expect(
+        page.getByRole('status').filter({ hasText: 'Consequential confirmation completed.' }),
+    ).toBeVisible();
+});
+
 test.describe('browser locale negotiation', () => {
     test.use({ locale: 'es-PE' });
 

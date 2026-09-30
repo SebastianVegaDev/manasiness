@@ -5,7 +5,6 @@
 }
 
 html {
-    min-width: 20rem;
     background: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-family-sans);

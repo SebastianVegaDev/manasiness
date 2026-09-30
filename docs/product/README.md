@@ -13,6 +13,7 @@ Use the smallest document set relevant to the work.
 | [`visual-foundation.md`](visual-foundation.md) | M2 visual identity, semantic design tokens, typography, theme behavior, styling rules, and brand-asset guidance. |
 | [`ui-primitives.md`](ui-primitives.md) | M2 reusable UI primitive ownership, API conventions, accessibility behavior, native/headless dependency boundary, and testing expectations. |
 | [`localization-and-copy.md`](localization-and-copy.md) | M2 UI-locale resolution, message ownership, presentation-formatting boundaries, and product copy/microcopy conventions. |
+| [`application-shell.md`](application-shell.md) | M2 application-shell ownership, route composition, responsive navigation, page-layout primitives, and M3 extension points. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -56,6 +57,15 @@ Read [`localization-and-copy.md`](localization-and-copy.md) before changing:
 - user-facing number/date/currency/time formatting;
 - product microcopy conventions;
 - the separation between UI locale and Organization currency/timezone.
+
+Read [`application-shell.md`](application-shell.md) before changing:
+
+- shell ownership or Server/Client boundaries;
+- desktop/compact navigation composition;
+- page-layout primitives;
+- working versus unavailable navigation behavior;
+- Organization/Identity shell extension points;
+- M3 route/authentication handoff seams.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

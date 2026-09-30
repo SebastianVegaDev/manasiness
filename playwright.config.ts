@@ -11,7 +11,7 @@ const apiOrigin = 'http://127.0.0.1:3101';
 const databaseRuntimeUrl = readDedicatedRuntimeTestDatabaseUrl();
 
 export default defineConfig({
-    testDir: './tests/e2e',
+    testDir: './tests',
 
     outputDir: './test-results/playwright',
 
@@ -60,8 +60,42 @@ export default defineConfig({
         {
             name: 'chromium',
 
+            testDir: './tests/e2e',
+
             use: {
                 ...devices['Desktop Chrome'],
+            },
+        },
+        {
+            name: 'visual-chromium-linux',
+
+            testDir: './tests/visual',
+
+            retries: 0,
+
+            snapshotPathTemplate: '{testDir}/__snapshots__/{testFilePath}/{arg}{ext}',
+
+            expect: {
+                toHaveScreenshot: {
+                    animations: 'disabled',
+                    caret: 'initial',
+                    maxDiffPixels: 0,
+                    scale: 'css',
+                    threshold: 0.1,
+                },
+            },
+
+            use: {
+                ...devices['Desktop Chrome'],
+                colorScheme: 'light',
+                deviceScaleFactor: 1,
+                locale: 'en-US',
+                reducedMotion: 'reduce',
+                timezoneId: 'UTC',
+                viewport: {
+                    width: 1280,
+                    height: 800,
+                },
             },
         },
     ],

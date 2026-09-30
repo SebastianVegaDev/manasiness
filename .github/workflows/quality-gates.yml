@@ -267,10 +267,10 @@ jobs:
             - name: Install Playwright Chromium
               run: pnpm exec playwright install --with-deps chromium
 
-            - name: Run integrated browser smoke test
+            - name: Run functional and visual browser tests
               env:
                   DEBUG: pw:webserver
-              run: timeout --signal=INT --kill-after=15s 240s pnpm test:e2e
+              run: timeout --signal=INT --kill-after=15s 240s pnpm test:browser:ci
 
             - name: Print PostgreSQL logs after failure
               if: failure()

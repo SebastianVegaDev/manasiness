@@ -18,6 +18,7 @@ Use the smallest document set relevant to the work.
 | [`collection-and-data-display-patterns.md`](collection-and-data-display-patterns.md) | M2 collection composition, search/filter URL state, pagination presentation, semantic/compact data display, and collection-specific loading/absence/error states. |
 | [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) | M2 product-wide feedback channels, generic async/empty/error states, transient notifications, broad failure treatment, consequential confirmation, and accessibility rules. |
 | [`accessibility-and-responsive-quality.md`](accessibility-and-responsive-quality.md) | M2 accessibility baseline, viewport matrix, automated checks, and manual review checklist. |
+| [`visual-regression.md`](visual-regression.md) | M2 deterministic screenshot-regression boundary, canonical Linux platform, baseline ownership, update workflow, and CI integration. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
 
 ## How to use these documents
@@ -102,6 +103,15 @@ Read [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) before c
 - reusable feedback infrastructure under `platform/feedback`.
 
 Read [`accessibility-and-responsive-quality.md`](accessibility-and-responsive-quality.md) when reviewing accessibility, responsive behavior, or their browser quality gate.
+
+Read [`visual-regression.md`](visual-regression.md) before:
+
+- adding or removing a visual baseline;
+- changing the canonical screenshot platform;
+- updating shared shell/theme/token snapshots;
+- changing screenshot thresholds or determinism controls;
+- modifying visual-regression CI behavior;
+- intentionally regenerating committed baselines.
 
 Read [`legacy-audit.md`](legacy-audit.md) when legacy behavior is relevant. Legacy is evidence, not the new product or architecture source of truth.
 

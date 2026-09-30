@@ -1,0 +1,96 @@
+.alert {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: start;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: var(--space-4);
+    color: var(--color-foreground);
+}
+
+.alert[data-feedback-presentation='banner'] {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.alert[data-feedback-tone='success'] {
+    border-color: var(--color-success);
+    background: var(--color-success-subtle);
+}
+
+.alert[data-feedback-tone='warning'] {
+    border-color: var(--color-warning);
+    background: var(--color-warning-subtle);
+}
+
+.alert[data-feedback-tone='critical'] {
+    border-color: var(--color-critical);
+    background: var(--color-critical-subtle);
+}
+
+.marker {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-pill);
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+}
+
+.alert[data-feedback-tone='success'] .marker {
+    color: var(--color-success);
+}
+
+.alert[data-feedback-tone='warning'] .marker {
+    color: var(--color-warning);
+}
+
+.alert[data-feedback-tone='critical'] .marker {
+    color: var(--color-critical);
+}
+
+.content {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.title {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-compact);
+}
+
+.body {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
+}
+
+.body > :first-child {
+    margin-top: 0;
+}
+
+.body > :last-child {
+    margin-bottom: 0;
+}
+
+.action {
+    align-self: center;
+}
+
+@media (max-width: 40rem) {
+    .alert {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .action {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+}

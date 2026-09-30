@@ -1,0 +1,92 @@
+.viewport {
+    position: fixed;
+    z-index: var(--layer-toast);
+    inset-inline-end: var(--space-4);
+    inset-block-end: var(--space-4);
+    display: grid;
+    gap: var(--space-3);
+    width: min(24rem, calc(100vw - (2 * var(--space-4))));
+    pointer-events: none;
+}
+
+.toast {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: start;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+    color: var(--color-foreground);
+    pointer-events: auto;
+}
+
+.toast[data-feedback-toast='success'] {
+    border-color: var(--color-success);
+}
+
+.toast[data-feedback-toast='warning'] {
+    border-color: var(--color-warning);
+}
+
+.toast[data-feedback-toast='critical'] {
+    border-color: var(--color-critical);
+}
+
+.marker {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-pill);
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+}
+
+.toast[data-feedback-toast='success'] .marker {
+    color: var(--color-success);
+}
+
+.toast[data-feedback-toast='warning'] .marker {
+    color: var(--color-warning);
+}
+
+.toast[data-feedback-toast='critical'] .marker {
+    color: var(--color-critical);
+}
+
+.copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.title {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-compact);
+}
+
+.description {
+    color: var(--color-foreground-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
+}
+
+@media (max-width: 40rem) {
+    .viewport {
+        inset-inline: var(--space-3);
+        inset-block-end: var(--space-3);
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        scroll-behavior: auto;
+    }
+}

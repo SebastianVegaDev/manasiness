@@ -3,7 +3,7 @@
 > **Status:** Active  
 > **Milestone:** M2 — Product Experience Foundation  
 > **Issue:** [#60](https://github.com/SebastianVegaDev/manasiness/issues/60)  
-> **Scope:** Reusable form composition, validation boundaries, mutation UX, structured API-error mapping, and destructive confirmation.
+> **Scope:** Reusable form composition, validation boundaries, mutation UX, and form-specific structured API-error mapping.
 
 ## 1. Purpose
 
@@ -15,11 +15,12 @@ Those features should not independently invent:
 - required-state presentation;
 - validation focus behavior;
 - pending/duplicate-submit behavior;
-- API error classification;
-- destructive confirmation;
+- form-specific API validation issue selection;
 - unsaved-change policy.
 
-This document defines the shared interaction contract without implementing any business-domain form.
+This document defines the shared form interaction contract without implementing any business-domain form.
+
+Product-wide alerts, notifications, generic states, broad failure treatment, and consequential confirmation are owned by [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) and `platform/feedback` as established by #62.
 
 ## 2. Ownership
 
@@ -39,8 +40,12 @@ platform/forms
     reusable form composition
     accessible validation wiring
     generic submission/focus conventions
-    structured API-error classification
-    destructive confirmation composition
+    form-specific structured API-error classification
+
+platform/feedback
+    product-wide alerts and notifications
+    broad failure presentation vocabulary
+    consequential confirmation composition
 
 feature/application code
     form field set
@@ -229,7 +234,7 @@ Protocol failures, transport failures, internal errors, stack traces, and arbitr
 
 A request ID may be shown as secondary support/debug information when useful.
 
-Issue #62 owns the broader product-wide feedback vocabulary and notification treatment.
+`platform/feedback` now owns the broader product-wide classification/presentation vocabulary through `classifyApiClientFailure()`. The form layer keeps its narrower mapper because validation issue paths and field association are form-specific.
 
 ## 7. Submission and pending state
 
@@ -294,21 +299,28 @@ A feature may choose to:
 - reset the form when a repeated-entry workflow genuinely benefits from it;
 - navigate to a created/detail surface;
 - invalidate/refetch server state;
-- show a concise transient confirmation when the resulting UI does not make success obvious.
+- compose a concise transient confirmation from `platform/feedback` when the resulting UI does not make success obvious.
 
-Do not hard-code navigation or reset behavior in generic form infrastructure.
+Do not hard-code navigation, reset behavior, or toast creation in generic form infrastructure.
 
-Issue #62 owns the broader success/toast conventions.
+The product-wide success/toast rules are defined in [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md).
 
-## 11. Destructive confirmation
+## 11. Consequential confirmation
 
-`DestructiveConfirmationDialog` builds on the shared `AlertDialog` primitive.
+The product-wide confirmation component is:
+
+```text
+platform/feedback/DestructiveConfirmationDialog
+```
+
+Forms may compose it for consequential mutation commands, but `platform/forms` no longer owns the component.
 
 Every consequential confirmation must explicitly name:
 
 ```text
 the action
 the consequence
+whether the consequence is reversible or irreversible
 the confirm action
 the cancel action
 ```
@@ -325,10 +337,10 @@ Prefer consequence-oriented language such as:
 ```text
 Deactivate product
 The product will no longer be available for new sales. Existing history is preserved.
-Cancel / Deactivate product
+Reversible / Cancel / Deactivate product
 ```
 
-The generic dialog does not decide whether a domain operation is reversible, irreversible, a deactivation, correction, cancellation, or deletion. The feature owns that semantic truth.
+The generic confirmation does not decide whether a domain operation is reversible, irreversible, a deactivation, correction, cancellation, or deletion. The feature owns that semantic truth.
 
 ## 12. Unsaved changes
 
@@ -366,8 +378,9 @@ Representative form experiences must preserve:
 - focus on the first invalid field after local invalid submission;
 - understandable pending button state;
 - form-level rejection semantics;
-- explicit destructive action/consequence copy;
-- accessible modal focus/return behavior inherited from `AlertDialog`.
+- accessible composition with consequential confirmation from `platform/feedback`.
+
+The shared confirmation inherits native modal focus/return behavior from `AlertDialog` and adds explicit consequence classification.
 
 Do not replace semantic HTML with ARIA when native semantics already exist.
 
@@ -377,16 +390,18 @@ The shared form foundation uses layered testing.
 
 ### Unit
 
-Pure error mapping is tested without a browser:
+Pure form error mapping is tested without a browser:
 
 - response errors preserve type/code/status/request ID;
 - field issues are selected by structural path;
 - unscoped issues remain visible to form-level handling;
 - transport/protocol/unexpected failures remain distinct.
 
+Product-wide broad failure classification is tested under `platform/feedback`; the two mappers intentionally have different responsibilities.
+
 ### Browser E2E
 
-The product-neutral `/foundation` form fixture proves representative behavior:
+The product-neutral `/foundation` form fixture proves representative behavior for:
 
 - invalid field feedback;
 - `aria-invalid`/error association;
@@ -396,7 +411,7 @@ The product-neutral `/foundation` form fixture proves representative behavior:
 - preservation of entered values on recoverable rejection;
 - machine-code-driven form-level API rejection copy;
 - successful mutation flow;
-- destructive confirmation wording/focus behavior.
+- composition with the shared consequential confirmation.
 
 The fixture is engineering evidence, not a fake product feature.
 

@@ -20,6 +20,7 @@ It does not own:
 - product-domain terminology;
 - data-table architecture;
 - form orchestration;
+- feedback/toast orchestration;
 - navigation composition;
 - feature-specific cards, tables, filters, or workflows.
 
@@ -63,11 +64,11 @@ Issue #57 evaluated current headless primitive options, including Radix Primitiv
 
 Both provide meaningful accessibility value for complex widgets.
 
-Base UI 1.8.0 is particularly relevant because it is unstyled, React-compatible, works with CSS Modules, supports modern bundlers including Turbopack, and centralizes difficult focus/keyboard behavior.
+Base UI 1.8.0 was particularly relevant because it is unstyled, React-compatible, works with CSS Modules, supports modern bundlers including Turbopack, and centralizes difficult focus/keyboard behavior.
 
 Manasiness does **not** adopt a headless primitive dependency in #57.
 
-The current set can be implemented with semantic HTML plus a small amount of focused React behavior:
+The current primitive set can be implemented with semantic HTML plus a small amount of focused React behavior:
 
 - native `button`, `a`, `input`, `textarea`, `select`, `fieldset`, and `label`;
 - native checkbox/radio controls with source-owned visual treatment;
@@ -95,7 +96,7 @@ At that point, adopt the smallest justified boundary and keep the Manasiness wra
 
 ## 4. Implemented primitive set
 
-The initial set is:
+The initial primitive set is:
 
 ```text
 Button
@@ -137,11 +138,19 @@ This set covers the immediate cross-cutting needs of:
 - status labels;
 - loading placeholders;
 - action/navigation menus;
-- modal and confirmation flows.
+- modal and confirmation foundations.
+
+Higher-level feedback composition is implemented by issue #62 under:
+
+```text
+apps/web/src/platform/feedback/
+```
+
+That layer composes these primitives rather than adding toast orchestration to `platform/ui`.
 
 ## 5. Intentionally deferred primitives
 
-The following are **not** implemented yet:
+The following low-level primitives are still **not** implemented:
 
 ```text
 Combobox / Autocomplete
@@ -150,7 +159,6 @@ Tabs
 Tooltip
 Date picker
 Data table
-Toast orchestration
 ```
 
 ### Combobox
@@ -175,9 +183,13 @@ Icon-only actions already require an explicit accessible label.
 
 A dedicated tooltip remains deferred until a real product surface needs supplementary hover/focus help. The WAI-ARIA APG tooltip pattern is also still documented as work in progress, so Manasiness should not introduce a generic tooltip API speculatively.
 
-### Toast orchestration
+### Toast orchestration handoff
 
-Issue #62 owns transient feedback strategy. #57 does not pre-implement that work.
+Issue #57 deliberately deferred transient feedback strategy.
+
+Issue #62 now owns and implements that responsibility in `platform/feedback` through product-wide feedback composition and `FeedbackToastProvider`.
+
+Toast lifecycle remains outside `platform/ui` because it is orchestration, not a low-level visual primitive.
 
 ## 6. Component API conventions
 
@@ -266,7 +278,7 @@ The `Menu` currently owns its transient open state because no cross-product requ
 
 A primitive should expose the smallest stable semantic API and accept children for content.
 
-Do not add large collections of feature-oriented props to avoid writing a feature-owned composition component.
+Do not add large collections of feature-oriented props to avoid writing a feature-owned or platform-composition component.
 
 ## 7. Button semantics
 
@@ -319,7 +331,7 @@ A field should use stable explicit relationships:
 
 Validation/orchestration is owned by issue #60.
 
-That later layer may connect:
+That layer may connect:
 
 ```text
 aria-invalid
@@ -384,6 +396,8 @@ red dot with no understandable text
 
 Domain-specific status vocabulary remains feature-owned. The shared primitive only supplies visual tone.
 
+Issue #62 reuses this primitive for product-wide feedback examples without turning broad feedback tones into domain status definitions.
+
 ## 11. Skeleton semantics
 
 `Skeleton` is presentation-only and is hidden from assistive technology.
@@ -396,6 +410,8 @@ status text
 ```
 
 A skeleton must not be the only indication that content is loading.
+
+Issue #62 preserves this rule in generic `FeedbackLoadingState`; issue #61 preserves it for collection loading.
 
 ## 12. Menu behavior
 
@@ -461,6 +477,8 @@ Every dialog has an explicit close control.
 
 Feature code still owns the actual confirmation action and its business consequences.
 
+Issue #62 composes `AlertDialog` into `platform/feedback/DestructiveConfirmationDialog`, where consequence vocabulary and reversible/irreversible presentation belong.
+
 ## 14. Server and client boundaries
 
 Most primitives are server-compatible markup/style wrappers.
@@ -476,6 +494,8 @@ Importing one interactive primitive must not make the entire application shell a
 
 Server Components should compose interactive leaves where needed.
 
+Higher-level client orchestration such as `FeedbackToastProvider` belongs outside `platform/ui` and should likewise be placed at the narrowest useful boundary.
+
 ## 15. Testing strategy
 
 The current repository already has:
@@ -485,7 +505,7 @@ The current repository already has:
 - production build;
 - Playwright browser E2E.
 
-Issue #57 uses the cheapest layer that proves each concern.
+Issue #57 uses the cheapest layer that proves each primitive concern.
 
 Browser E2E verifies representative behavior for:
 
@@ -497,19 +517,15 @@ Browser E2E verifies representative behavior for:
 - Escape close;
 - dialog focus return.
 
-The existing dark-theme E2E continues to exercise the same semantic tokens used by primitives.
-
-Tests deliberately do not snapshot CSS class strings.
+Issue #62 owns higher-level feedback/toast browser behavior. Tests deliberately do not snapshot CSS class strings.
 
 ## 16. Temporary engineering surface
 
-The root development landing remains temporary until issue #59 builds the real application shell.
+The `/foundation` route is an engineering-only surface for reusable M2 interaction evidence.
 
-Issue #57 adds a small interaction-foundation section there so Browser E2E can exercise primitives through real application markup.
+Issue #57 added primitive diagnostics there. Later M2 issues add product-neutral fixtures for form, collection, and feedback behavior without inventing product-domain screens.
 
-This is not a product-domain screen.
-
-Issue #59 may remove the diagnostics surface after the shell has real consumers for the primitive layer.
+This is not a product-domain surface and must not become a substitute for real feature ownership.
 
 ## 17. Review checklist
 
@@ -522,7 +538,7 @@ Before adding a new primitive under `platform/ui`, ask:
 5. Does it keep business language out of the primitive API?
 6. Does it preserve keyboard behavior and visible focus?
 7. Can it remain a server-compatible component, or is a client boundary truly required?
-8. Is a new primitive better than feature-owned composition?
+8. Is a new primitive better than feature-owned or platform-owned composition?
 9. Is there a real consumer now?
 
 If the last answer is no, defer it.

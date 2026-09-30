@@ -8,6 +8,7 @@ Read:
 
 ```text
 docs/product/form-and-mutation-patterns.md
+docs/product/feedback-and-state-patterns.md
 docs/product/ui-primitives.md
 apps/web/src/platform/api/README.md
 ```
@@ -38,6 +39,9 @@ platform/ui
 
 platform/forms
     reusable form composition and submission conventions
+
+platform/feedback
+    product-wide alerts, notifications, states, and consequential confirmation
 
 feature/application code
     field names
@@ -137,23 +141,34 @@ Feature/application code owns machine-code-to-localized-copy mapping near the ca
 
 Unexpected technical messages, stack traces, and raw backend internals must not be rendered directly to users.
 
+`platform/feedback` owns the broader product-wide failure vocabulary and transient-notification treatment. Forms retain validation-issue selection because structural field paths are form-specific.
+
 ## Invalid submission focus
 
 After a client-side invalid submission, `focusFirstInvalidControl()` moves focus to the first enabled element marked with `aria-invalid="true"` inside the form.
 
 Do not force focus movement after every server rejection. Form-level API rejection should move focus only when it improves recovery/orientation.
 
-## Destructive confirmation
+## Consequential confirmation
 
-`DestructiveConfirmationDialog` composes the existing `AlertDialog` primitive and requires explicit copy for:
+Consequential confirmation is owned by:
+
+```text
+platform/feedback/DestructiveConfirmationDialog
+```
+
+Forms may compose it when a form command has a meaningful consequence.
+
+The caller must provide explicit copy for:
 
 - the action title;
 - the consequence;
+- whether the consequence is reversible or irreversible;
 - confirm and cancel controls.
 
 Do not use vague confirmation text such as "Are you sure?".
 
-The caller owns the actual command, pending state, success/failure handling, and whether the dialog closes before or after that command completes.
+The form/feature owns the actual command, pending state, success/failure handling, and whether the dialog closes before or after that command completes.
 
 ## Unsaved changes
 
@@ -167,6 +182,7 @@ When a feature needs protection, it owns the definition of meaningful dirty stat
 
 Use the cheapest layer that proves the concern:
 
-- unit tests for pure API-error classification;
-- Browser E2E for field associations, invalid focus, pending/duplicate-submit behavior, recoverable rejection, success, and destructive confirmation;
+- unit tests for pure API-error classification and validation-issue selection;
+- Browser E2E for field associations, invalid focus, pending/duplicate-submit behavior, recoverable rejection, success, and form composition with consequential confirmation;
+- `platform/feedback` tests own product-wide notification/state/confirmation semantics;
 - no fake business forms solely for testing shared infrastructure.

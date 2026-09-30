@@ -19,7 +19,20 @@ Use the smallest document set relevant to the work.
 | [`feedback-and-state-patterns.md`](feedback-and-state-patterns.md) | M2 product-wide feedback channels, generic async/empty/error states, transient notifications, broad failure treatment, consequential confirmation, and accessibility rules. |
 | [`accessibility-and-responsive-quality.md`](accessibility-and-responsive-quality.md) | M2 accessibility baseline, viewport matrix, automated checks, and manual review checklist. |
 | [`visual-regression.md`](visual-regression.md) | M2 deterministic screenshot-regression boundary, canonical Linux platform, baseline ownership, update workflow, and CI integration. |
+| [`m2-product-experience.md`](m2-product-experience.md) | M2 exit/readiness record: integrated baseline, architecture review, M3 handoff points, validation contract, and intentional deferrals. |
 | [`legacy-audit.md`](legacy-audit.md) | Evidence from the legacy product: workflows and UX patterns worth preserving, redesigning, replacing, or removing. |
+
+## Milestone readiness
+
+[`m2-product-experience.md`](m2-product-experience.md) is the concise exit record for the complete product-experience foundation.
+
+It does not replace the owning contracts above. Use it when you need to understand:
+
+- whether M2 can be treated as stable infrastructure;
+- how the shared Web boundaries fit together;
+- which extension points M3 should consume;
+- which product/auth/domain behavior is intentionally still deferred;
+- which integrated quality gates protect the baseline.
 
 ## How to use these documents
 
